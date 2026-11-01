@@ -238,8 +238,10 @@ CARDS.forEach(c => { const i = new Image(); i.src = c.file; });
 const Sound = {
   ctx: null, muted: false, noise: null, tear: null,
   init() {
-    if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+    if (this.ctx) { if (this.ctx.state !== 'running') this.ctx.resume().catch(() => {}); return; }
     try {
+      // Safari 16.4+: play like a media app, so sound works even with the iPhone's silent switch on
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
       const len = this.ctx.sampleRate * 2, buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = buf.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
@@ -248,6 +250,38 @@ const Sound = {
     } catch (e) { this.ctx = null; }
   },
   ok() { return this.ctx && !this.muted; },
+  // Phones only allow audio to start inside a finished tap (touchend / pointerup / click), not on
+  // touch-down, so we (re)unlock on those events and play a silent sample to wake the audio output.
+  unlock() {
+    this.init(); if (!this.ctx) return;
+    if (this.ctx.state !== 'running') this.ctx.resume().catch(() => {});
+    if (!this.unlocked) { try { const b = this.ctx.createBuffer(1, 1, 22050), s = this.ctx.createBufferSource();
+      s.buffer = b; s.connect(this.ctx.destination); s.start(0); this.unlocked = true; } catch (e) {} }
+  },
+  // carousel: a card-flick "thwip" each time a pack passes the centre
+  shuffle(speed = 0.5) {
+    const v = clamp(0.5 + speed * 0.35, 0.5, 1);
+    this.noiseHit('bandpass', 2600, 900, 0.09, 0.42 * v, 1.4);
+    this.noiseHit('highpass', 5000, 3000, 0.035, 0.12 * v, 0.7);
+    this.tone(230, 0, 0.06, 0.1 * v, 'sine', 120);
+  },
+  // carousel: soft air "swish" while the packs are being dragged, louder when faster
+  swishStart() {
+    if (!this.ok() || this.swish) return;
+    const c = this.ctx, s = this.src(), f = c.createBiquadFilter(), g = c.createGain();
+    f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 0.6; g.gain.value = 0;
+    s.connect(f); f.connect(g); g.connect(this.master); s.start(0, Math.random()); this.swish = { s, f, g };
+  },
+  swishUpdate(speed) {
+    if (!this.swish) return; const t = this.ctx.currentTime;
+    this.swish.g.gain.setTargetAtTime(clamp(speed * 0.18, 0, 0.22), t, 0.04);
+    this.swish.f.frequency.setTargetAtTime(700 + clamp(speed, 0, 3) * 500, t, 0.05);
+  },
+  swishStop() {
+    if (!this.swish) return; const { s, g } = this.swish, t = this.ctx.currentTime;
+    g.gain.setTargetAtTime(0, t, 0.06); s.stop(t + 0.4); this.swish = null;
+  },
+  settle() { this.tone(170, 0, 0.12, 0.12, 'sine', 90); this.noiseHit('lowpass', 1200, 300, 0.08, 0.08); },
   src() { const s = this.ctx.createBufferSource(); s.buffer = this.noise; s.loop = true; return s; },
   env(g, t, a, peak, d) { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); },
   tearStart() {
@@ -285,8 +319,9 @@ const Sound = {
   chime() { [1046.5, 1318.5, 1568, 2093, 2637].forEach((f, i) => { this.tone(f, i * 0.08, 0.9, 0.16); this.tone(f * 2, i * 0.08, 0.4, 0.04); }); },
 };
 $('#mute').addEventListener('click', () => {
-  Sound.muted = !Sound.muted; $('#mute').textContent = Sound.muted ? '🔇' : '🔊'; if (Sound.muted) Sound.tearStop();
+  Sound.muted = !Sound.muted; $('#mute').textContent = Sound.muted ? '🔇' : '🔊'; if (Sound.muted) { Sound.tearStop(); Sound.swishStop(); }
 });
+['touchend', 'pointerup', 'click', 'keydown'].forEach(ev => addEventListener(ev, () => Sound.unlock(), { passive: true, capture: true }));
 const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
 
 // ======================================================================= particles
@@ -368,6 +403,7 @@ function setCardLight(el, px, py, tiltAmt = 1) {
 
 // ======================================================================= carousel
 const stage = $('#stage');
+let carouselSpeed = 0.5;
 let cpos = 0, cAnim = null, chosen = 0;
 const N = CFG.packs.length;
 const cEls = CFG.packs.map((p, i) => {
@@ -394,7 +430,7 @@ function layoutCarousel() {
   });
   const ci = ((Math.round(cpos) % N) + N) % N;
   if (ci !== chosen || !$('#cname').textContent) {
-    if (ci !== chosen) Sound.tick();
+    if (ci !== chosen) { Sound.shuffle(carouselSpeed); buzz(4); }
     chosen = ci; const p = CFG.packs[ci];
     $('#cname').textContent = p.name || '';
     root.style.setProperty('--c1', p.colors?.[0] || '#5b3fd6'); root.style.setProperty('--c2', p.colors?.[1] || '#c9b8ff');
@@ -402,9 +438,11 @@ function layoutCarousel() {
   }
 }
 function animateTo(target, dur = 420) {
+  if (!cdrag) carouselSpeed = Math.min(carouselSpeed, 1);
   cancelAnimationFrame(cAnim); const from = cpos, t0 = now();
   const step = () => { const k = clamp((now() - t0) / dur, 0, 1), e = 1 - Math.pow(1 - k, 3);
-    cpos = lerp(from, target, e); layoutCarousel(); cAnim = k < 1 ? requestAnimationFrame(step) : null; };
+    cpos = lerp(from, target, e); layoutCarousel(); cAnim = k < 1 ? requestAnimationFrame(step) : null;
+    if (k >= 1 && Math.abs(target - from) > 0.05) Sound.settle(); };
   step();
 }
 let cdrag = null;
@@ -418,9 +456,12 @@ stage.addEventListener('pointermove', e => {
   if (!cdrag) return;
   const dx = e.clientX - cdrag.x; cdrag.moved = Math.max(cdrag.moved, Math.abs(dx));
   const dt = Math.max(1, now() - cdrag.t); cdrag.v = (e.clientX - cdrag.lx) / dt; cdrag.lx = e.clientX; cdrag.t = now();
+  carouselSpeed = Math.abs(cdrag.v) * 2; Sound.swishStart(); Sound.swishUpdate(carouselSpeed);
   if (N > 1) { cpos = cdrag.pos - dx / (PW * 0.8); if (N <= 2) cpos = clamp(cpos, -0.3, N - 0.7); layoutCarousel(); }
 });
+stage.addEventListener('pointercancel', () => { Sound.swishStop(); cdrag = null; animateTo(Math.round(cpos)); });
 stage.addEventListener('pointerup', e => {
+  Sound.swishStop();
   if (!cdrag) return; const d = cdrag; cdrag = null;
   if (d.moved < 8) {
     const hit = document.elementsFromPoint(e.clientX, e.clientY).find(n => n.classList && n.classList.contains('cpack'));
