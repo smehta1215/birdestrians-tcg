@@ -168,12 +168,54 @@ img { -webkit-user-drag: none; }
   box-shadow: 0 0 28px #fff, inset 0 0 28px #ffffffaa; }
 .land-glow { position: absolute; left: -45%; right: -45%; top: -25%; bottom: -25%; pointer-events: none; opacity: 0;
   background: radial-gradient(closest-side, #ffffffee, #ffffff66 45%, transparent 75%); }
-#fx { position: fixed; inset: 0; pointer-events: none; z-index: 40; }
+#fx { position: fixed; inset: 0; pointer-events: none; z-index: 80; }
+
+/* ---------- intro / title screen ---------- */
+#intro { position: fixed; inset: 0; z-index: 70; cursor: pointer; }
+.ih-wrap { position: absolute; inset: 0; pointer-events: none; }
+#intro.opening .ih-wrap { filter: drop-shadow(0 0 14px #ffffffcc); }
+.ih { position: absolute; inset: 0;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg stroke='%23ffffff' stroke-opacity='.09' stroke-width='4.5' stroke-linecap='round' fill='none'%3E%3Cg transform='translate(30 46) rotate(-18)'%3E%3Cpath d='M0 0v-14M0 0l-12-8M0 0l12-8M0 0v6'/%3E%3C/g%3E%3Cg transform='translate(86 100) rotate(22)'%3E%3Cpath d='M0 0v-14M0 0l-12-8M0 0l12-8M0 0v6'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(90% 60% at 50% 38%, #9d7bff 0%, transparent 70%),
+    linear-gradient(165deg, #2a1666 0%, #5b3fd6 45%, #b04fd0 85%, #ff7ac6 120%); }
+.intro-content { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px; text-align: center; color: #fff; }
+.spark { position: absolute; color: #fff; pointer-events: none; animation: twinkle 2.4s ease-in-out infinite; text-shadow: 0 0 10px #fff; }
+@keyframes twinkle { 0%,100% { opacity: .15; transform: scale(.6) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(20deg); } }
+.fan { position: relative; height: min(34vh, 300px); width: min(80vw, 420px); margin-bottom: 6px; }
+.fan::before { content: ''; position: absolute; left: 50%; top: 50%; width: 140%; height: 120%; transform: translate(-50%, -50%);
+  background: radial-gradient(closest-side, #ffffff66, transparent 70%); }
+.fan-pack { position: absolute; left: 50%; bottom: 0; height: 100%; aspect-ratio: 600 / 1040; transform-origin: 50% 100%;
+  filter: drop-shadow(0 16px 22px #0006); }
+.fan-pack img { width: 100%; height: 100%; display: block; animation: fanbob 3.4s ease-in-out infinite; }
+@keyframes fanbob { 50% { transform: translateY(-9px); } }
+.wordmark { margin: 10px 0 0; font-weight: 700; font-size: clamp(40px, 11.5vw, 88px); line-height: 1; letter-spacing: 2px; color: #fff;
+  text-shadow: 3px 0 0 #ff4f9a, -3px 0 0 #ff4f9a, 0 3px 0 #ff4f9a, 0 -3px 0 #ff4f9a, 2px 2px 0 #ff4f9a, -2px -2px 0 #ff4f9a,
+    2px -2px 0 #ff4f9a, -2px 2px 0 #ff4f9a, 0 8px 0 #c2185b, 0 12px 26px #0007; }
+.tcg-pill { margin-top: 14px; background: #ff4f9a; border-radius: 999px; padding: 4px 16px; font-weight: 600; font-size: 13px; letter-spacing: 3px; }
+.ribbon { margin-top: 18px; position: relative; background: #ffd34f; color: #5a2a00; font-weight: 700; font-size: clamp(16px, 4.4vw, 22px);
+  padding: 8px 34px; clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 50%, 100% 100%, 0 100%, 14px 50%); box-shadow: 0 6px 0 #c99a00; }
+.play { margin-top: 30px; animation: playpulse 1.6s ease-in-out infinite; }
+@keyframes playpulse { 50% { transform: scale(1.06); box-shadow: 0 6px 0 #2fb898, 0 0 34px #8ff5d8aa; } }
+.sound-note { margin-top: 18px; font-size: 13px; opacity: .75; }
 .empty { max-width: 360px; text-align: center; background: #fff; padding: 22px; border-radius: 16px; box-shadow: 0 10px 30px #0002; }
 code { background: #f0eef7; padding: 2px 6px; border-radius: 6px; }
 </style>
 </head>
 <body>
+<div id="intro" role="button" aria-label="Start">
+  <div class="ih-wrap"><div class="ih" id="ihTop"></div></div>
+  <div class="ih-wrap"><div class="ih" id="ihBot"></div></div>
+  <div class="intro-content" id="introContent">
+    <div class="fan" id="fan"></div>
+    <h1 class="wordmark" id="introTitle">BIRDESTRIANS</h1>
+    <div class="tcg-pill">TRADING CARD GAME</div>
+    <div class="ribbon" id="introSub"></div>
+    <button class="btn play" id="playBtn">Tap to play</button>
+    <div class="sound-note">🔊 Best with sound on</div>
+  </div>
+</div>
 <div class="topbar"><div class="brand" id="brand">BIRDESTRIANS</div><button class="icon-btn" id="mute" aria-label="Toggle sound">🔊</button></div>
 
 <section class="screen active" id="carousel">
@@ -225,7 +267,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const now = () => performance.now();
-let PW = 300, PH = 520, state = 'carousel';
+let PW = 300, PH = 520, state = 'intro';
 
 function measure() {
   const vw = innerWidth, vh = innerHeight;
@@ -303,6 +345,7 @@ const Sound = {
   slide() { this.noiseHit('lowpass', 900, 2200, 0.5, 0.18); },
   tick() { this.tone(1400, 0, 0.04, 0.06, 'triangle'); },
   charge() { this.tone(260, 0, 0.75, 0.12, 'sawtooth', 880); this.noiseHit('bandpass', 400, 4000, 0.75, 0.1, 2); },
+  chimeSoft() { [784, 988, 1175, 1568].forEach((f, i) => this.tone(f, i * 0.07, 0.6, 0.05)); },
   chime() { [1046.5, 1318.5, 1568, 2093, 2637].forEach((f, i) => { this.tone(f, i * 0.08, 0.9, 0.16); this.tone(f * 2, i * 0.08, 0.4, 0.04); }); },
 };
 $('#mute').addEventListener('click', () => {
@@ -940,6 +983,85 @@ addEventListener('resize', () => {
   if (tear && P.flap && !tear.done) renderTear();
 });
 layoutCarousel();
+
+// ======================================================================= intro
+(function setupIntro() {
+  $('#introTitle').textContent = (CFG.introTitle || CFG.title || 'Birdestrians').toUpperCase();
+  const sub = CFG.introSubtitle; if (sub) $('#introSub').textContent = sub; else $('#introSub').remove();
+  const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  $('#playBtn').textContent = CFG.introButton || (fine ? 'Click to play' : 'Tap to play');
+  // a fan of the packs behind the title
+  const fan = $('#fan'), packs = CFG.packs.slice(0, 3), mid = (packs.length - 1) / 2;
+  packs.forEach((p, i) => {
+    const d = i - mid, el = document.createElement('div'); el.className = 'fan-pack';
+    el.style.transform = `translateX(calc(-50% + ${d * 62}%)) rotate(${d * 15}deg) ${d ? 'scale(.9)' : ''}`;
+    el.style.zIndex = 10 - Math.abs(d);
+    el.innerHTML = packArt(p).replace('class="pack-art"', 'style="width:100%;height:100%"');
+    const img = el.firstElementChild; if (img) img.style.animationDelay = (i * 0.4) + 's';
+    fan.appendChild(el);
+  });
+  // twinkling sparkles
+  const ic = $('#introContent');
+  for (let i = 0; i < 16; i++) {
+    const sp = document.createElement('span'); sp.className = 'spark'; sp.textContent = i % 3 ? '✦' : '✧';
+    Object.assign(sp.style, { left: Math.random() * 96 + '%', top: Math.random() * 96 + '%', fontSize: 10 + Math.random() * 18 + 'px',
+      animationDelay: (Math.random() * 2.4).toFixed(2) + 's' });
+    ic.prepend(sp);
+  }
+  // the two halves meet along a torn zigzag edge, so the screen "rips open" like a pack
+  function zig() {
+    const n = Math.max(12, Math.round(innerWidth / 22)), top = [], bot = [];
+    for (let i = 0; i <= n; i++) { const x = (i / n * 100).toFixed(2) + '%', o = i % 2 ? 7 : -7;
+      top.push(`${x} calc(50% + ${o + 2}px)`); bot.push(`${x} calc(50% + ${o}px)`); } // halves overlap 2px: no hairline seam
+    $('#ihTop').style.clipPath = `polygon(0 0, 100% 0, ${top.reverse().join(', ')})`;
+    $('#ihBot').style.clipPath = `polygon(${bot.join(', ')}, 100% 100%, 0 100%)`;
+  }
+  zig(); addEventListener('resize', () => { if ($('#intro')) zig(); });
+  const go = () => startIntro();
+  $('#intro').addEventListener('click', go);
+  addEventListener('keydown', e => { if (state === 'intro' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); go(); } });
+})();
+
+async function startIntro() {
+  if (state !== 'intro') return; state = 'intro-out';
+  Sound.unlock(); Sound.chimeSoft(); buzz(15);
+  const ic = $('#introContent');
+  // the fan of packs spreads, the title swells and fades, light bursts from the centre
+  [...$('#fan').children].forEach((el, i, all) => {
+    const d = i - (all.length - 1) / 2;
+    el.animate([{ transform: el.style.transform }, { transform: `${el.style.transform} translate(${d * 40}px, -30px) rotate(${d * 8}deg) scale(1.1)` }],
+      { duration: 450, easing: 'cubic-bezier(.3,1.4,.5,1)', fill: 'forwards' });
+  });
+  ic.animate([{ transform: 'none', opacity: 1 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.5 }, { transform: 'scale(1.14)', opacity: 0 }],
+    { duration: 520, easing: 'ease-in', fill: 'forwards' });
+  const cx = innerWidth / 2, cy = innerHeight / 2, d = Math.min(innerWidth, innerHeight) * 0.7;
+  const ring = document.createElement('div'); ring.className = 'ring'; ring.style.zIndex = 75;
+  Object.assign(ring.style, { left: cx - d / 2 + 'px', top: cy - d / 2 + 'px', width: d + 'px', height: d + 'px' });
+  document.body.appendChild(ring);
+  ring.animate([{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(2.2)', opacity: 0 }], { duration: 700, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => ring.remove();
+  fx.burst(cx, cy, 60);
+  await wait(380);
+  // the screen tears open: top half up, bottom half down
+  $('#intro').classList.add('opening');
+  Sound.whoosh();
+  const ease = 'cubic-bezier(.6,0,.25,1)';
+  $('#ihTop').animate([{ transform: 'none' }, { transform: 'translateY(-58%) rotate(-3deg)' }], { duration: 850, easing: ease, fill: 'forwards' });
+  $('#ihBot').animate([{ transform: 'none' }, { transform: 'translateY(58%) rotate(2deg)' }], { duration: 850, easing: ease, fill: 'forwards' });
+  await wait(330);
+  // packs rise into the carousel one after another, then the title and buttons
+  layoutCarousel();
+  cEls.forEach(el => {
+    const base = el.style.transform, r = Math.abs(wrapRel(+el.dataset.i - cpos));
+    el.animate([{ transform: `${base} translateY(55vh) scale(.6) rotate(${(+el.dataset.i % 2 ? 1 : -1) * 12}deg)`, opacity: 0 },
+      { transform: base, opacity: el.style.opacity }],
+      { duration: 800, delay: 60 + r * 110, easing: 'cubic-bezier(.2,.9,.3,1.12)', fill: 'backwards' });
+  });
+  fadeEls().forEach(el => el.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }],
+    { duration: 500, delay: 380, easing: 'ease-out', fill: 'backwards' }));
+  await wait(560);
+  $('#intro').remove();
+  state = 'carousel';
+}
 // Read-only debug hook used for automated testing.
 window.__bird = { get state() { return state; }, get tear() { return tear; } };
 })();

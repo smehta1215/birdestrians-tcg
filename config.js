@@ -1,5 +1,9 @@
 // Birdestrians pack opener settings. Edit freely.
 window.BIRDESTRIANS_CONFIG = {
+  // Title screen (shown before the packs). introTitle defaults to `title`.
+  introSubtitle: "Aida's Birthday Edition",
+  // introButton: "Tap to play",   // optional; defaults to "Tap to play" / "Click to play"
+
   // Shown at the top of the pack-select screen.
   title: "Birdestrians",
   message: "Happy Birthday! Pick a pack",
