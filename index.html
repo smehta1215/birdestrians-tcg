@@ -263,27 +263,27 @@ const Sound = {
       s.buffer = b; s.connect(this.ctx.destination); s.start(0); this.unlocked = true; } catch (e) {} }
   },
   // carousel: a card-flick "thwip" each time a pack passes the centre
+  // carousel: a soft rounded "tok" (pure tones, no noise) each time a pack passes the centre, like a dial
   shuffle(speed = 0.5) {
-    const v = clamp(0.5 + speed * 0.35, 0.5, 1);
-    this.noiseHit('bandpass', 2600, 900, 0.09, 0.42 * v, 1.4);
-    this.noiseHit('highpass', 5000, 3000, 0.035, 0.12 * v, 0.7);
-    this.tone(230, 0, 0.06, 0.1 * v, 'sine', 120);
+    const v = clamp(0.6 + speed * 0.2, 0.6, 1);
+    this.tone(720, 0, 0.1, 0.045 * v, 'sine', 680);
+    this.tone(1440, 0, 0.05, 0.01 * v, 'sine');
   },
-  // carousel: soft air "swish" while the packs are being dragged, louder when faster
+  // carousel: a low, airy whoosh that rises and falls smoothly with the spin speed
   swishStart() {
     if (!this.ok() || this.swish) return;
     const c = this.ctx, s = this.src(), f = c.createBiquadFilter(), g = c.createGain();
-    f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 0.6; g.gain.value = 0;
+    f.type = 'lowpass'; f.frequency.value = 400; f.Q.value = 0.3; g.gain.value = 0;
     s.connect(f); f.connect(g); g.connect(this.master); s.start(0, Math.random()); this.swish = { s, f, g };
   },
-  swishUpdate(speed) {
+  swishUpdate(speed) { // speed in px/ms; long time constants keep it from fluttering
     if (!this.swish) return; const t = this.ctx.currentTime;
-    this.swish.g.gain.setTargetAtTime(clamp(speed * 0.18, 0, 0.22), t, 0.04);
-    this.swish.f.frequency.setTargetAtTime(700 + clamp(speed, 0, 3) * 500, t, 0.05);
+    this.swish.g.gain.setTargetAtTime(clamp(speed * 0.03, 0, 0.08), t, 0.12);
+    this.swish.f.frequency.setTargetAtTime(320 + clamp(speed, 0, 4) * 170, t, 0.2);
   },
   swishStop() {
     if (!this.swish) return; const { s, g } = this.swish, t = this.ctx.currentTime;
-    g.gain.setTargetAtTime(0, t, 0.06); s.stop(t + 0.4); this.swish = null;
+    g.gain.setTargetAtTime(0, t, 0.15); s.stop(t + 1); this.swish = null;
   },
   src() { const s = this.ctx.createBufferSource(); s.buffer = this.noise; s.loop = true; return s; },
   env(g, t, a, peak, d) { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); },
@@ -448,31 +448,61 @@ function animateTo(target, dur = 420) {
   step();
 }
 let cdrag = null;
+const STEP = () => PW * 0.8; // px of drag per pack
 stage.addEventListener('pointerdown', e => {
   if (state !== 'carousel') return; Sound.init();
   cancelAnimationFrame(cAnim); cAnim = null;
-  cdrag = { x: e.clientX, pos: cpos, t: now(), lx: e.clientX, v: 0, moved: 0 };
+  cdrag = { x: e.clientX, pos: cpos, moved: 0, samples: [{ t: now(), x: e.clientX }], sv: 0 };
   stage.setPointerCapture(e.pointerId);
 });
 stage.addEventListener('pointermove', e => {
   if (!cdrag) return;
-  const dx = e.clientX - cdrag.x; cdrag.moved = Math.max(cdrag.moved, Math.abs(dx));
-  const dt = Math.max(1, now() - cdrag.t); cdrag.v = (e.clientX - cdrag.lx) / dt; cdrag.lx = e.clientX; cdrag.t = now();
-  carouselSpeed = Math.abs(cdrag.v) * 2; Sound.swishStart(); Sound.swishUpdate(carouselSpeed);
-  if (N > 1) { cpos = cdrag.pos - dx / (PW * 0.8); if (N <= 2) cpos = clamp(cpos, -0.3, N - 0.7); layoutCarousel(); }
+  const t = now(), dx = e.clientX - cdrag.x; cdrag.moved = Math.max(cdrag.moved, Math.abs(dx));
+  const prev = cdrag.samples[cdrag.samples.length - 1];
+  const inst = Math.abs(e.clientX - prev.x) / Math.max(1, t - prev.t);
+  cdrag.samples.push({ t, x: e.clientX }); while (cdrag.samples.length > 2 && t - cdrag.samples[0].t > 100) cdrag.samples.shift();
+  cdrag.sv = lerp(cdrag.sv, inst, 0.25); carouselSpeed = cdrag.sv;
+  if (cdrag.moved > 6) { Sound.swishStart(); Sound.swishUpdate(cdrag.sv); }
+  if (N > 1) { cpos = cdrag.pos - dx / STEP(); if (N <= 2) cpos = clamp(cpos, -0.3, N - 0.7); layoutCarousel(); }
 });
+// Release velocity (px/ms) measured over the last ~100ms of the drag, ignoring a finger that paused before lifting.
+function releaseVelocity(d) {
+  const s = d.samples, a = s[0], b = s[s.length - 1];
+  if (now() - b.t > 60 || b.t - a.t < 8) return 0;
+  return (b.x - a.x) / (b.t - a.t);
+}
+// Momentum: after a flick the carousel keeps turning like a wheel, slowing smoothly (exponential
+// friction) and coming to rest exactly on a pack.
+function spin(vPx) {
+  const v0 = clamp(-vPx / STEP(), -0.02, 0.02); // packs per ms
+  if (N <= 2 || Math.abs(v0) < 0.0007) { Sound.swishStop(); return animateTo(N <= 2 ? clamp(Math.round(cpos), 0, N - 1) : Math.round(cpos)); }
+  const start = cpos, natural = start + v0 / 0.0028;
+  let target = Math.round(natural);
+  if ((target - start) * Math.sign(v0) < 0.2) target += Math.sign(v0);
+  const A = target - start, k = Math.abs(v0 / A), t0 = now();
+  cancelAnimationFrame(cAnim);
+  Sound.swishStart();
+  const step = () => {
+    const t = now() - t0, rem = Math.exp(-k * t);
+    cpos = start + A * (1 - rem);
+    carouselSpeed = Math.abs(A * k * rem) * STEP();
+    Sound.swishUpdate(carouselSpeed);
+    if (Math.abs(A) * rem < 0.003) { cpos = target; layoutCarousel(); Sound.swishStop(); cAnim = null; return; }
+    layoutCarousel(); cAnim = requestAnimationFrame(step);
+  };
+  step();
+}
 stage.addEventListener('pointercancel', () => { Sound.swishStop(); cdrag = null; animateTo(Math.round(cpos)); });
 stage.addEventListener('pointerup', e => {
-  Sound.swishStop();
   if (!cdrag) return; const d = cdrag; cdrag = null;
   if (d.moved < 8) {
+    Sound.swishStop();
     const hit = document.elementsFromPoint(e.clientX, e.clientY).find(n => n.classList && n.classList.contains('cpack'));
     if (hit) { const i = +hit.dataset.i, r = wrapRel(i - cpos);
       if (Math.abs(r) < 0.5) return selectPack(); return animateTo(cpos + r); }
     return animateTo(Math.round(cpos));
   }
-  let target = Math.round(cpos - d.v * 0.6); if (N <= 2) target = clamp(target, 0, N - 1);
-  animateTo(target);
+  spin(releaseVelocity(d));
 });
 $('#openBtn').addEventListener('click', () => { Sound.init(); selectPack(); });
 addEventListener('keydown', e => {
@@ -517,7 +547,7 @@ const openWrap = $('#openWrap'), opening = $('#opening'), hint = $('#hint');
 // The cut follows the pointer's up/down movement, exaggerated by GAIN, so even a fairly straight
 // laptop swipe visibly bends the line. It may wander from just under the top crimp to a little
 // way into the art.
-const GAIN = 2.4, UP = 0.11, DOWN = 0.13;
+const GAIN = 1.45, UP = 0.08, DOWN = 0.09;
 const clampY = yn => clamp(yn, CFG.tearLine - UP, CFG.tearLine + DOWN);
 const mapY = fy => clampY((CFG.tearLine * PH + (fy - tear.y0) * GAIN) / PH);
 const tearProg = () => { const p = tear.path; if (!tear.dir || !p.length) return 0; const t = p[p.length - 1]; return tear.dir > 0 ? t.x : 1 - t.x; };
