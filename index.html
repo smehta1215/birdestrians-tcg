@@ -251,8 +251,12 @@ code { background: #f0eef7; padding: 2px 6px; border-radius: 6px; }
 <div class="zoom" id="zoom"><div class="zc" id="zc"></div></div>
 <canvas id="fx"></canvas>
 
-<script src="config.js"></script>
-<script src="cards/cards.js"></script>
+<!-- Load settings and the card list fresh every visit, so phones never use a stale cached copy
+     (GitHub Pages lets browsers cache these for ~10 minutes). -->
+<script>
+  (function () { var v = Date.now();
+    document.write('<script src="config.js?v=' + v + '"><\/script><script src="cards/cards.js?v=' + v + '"><\/script>'); })();
+</script>
 <script>
 (() => {
 'use strict';
