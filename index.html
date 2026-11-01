@@ -164,6 +164,10 @@ img { -webkit-user-drag: none; }
 .zoom.on { opacity: 1; pointer-events: auto; }
 .zoom .zc { position: relative; width: min(82vw, 62vh * .714); aspect-ratio: 5 / 7; }
 
+.ring { position: fixed; border-radius: 50%; pointer-events: none; z-index: 30; border: 3px solid #fff;
+  box-shadow: 0 0 28px #fff, inset 0 0 28px #ffffffaa; }
+.land-glow { position: absolute; left: -45%; right: -45%; top: -25%; bottom: -25%; pointer-events: none; opacity: 0;
+  background: radial-gradient(closest-side, #ffffffee, #ffffff66 45%, transparent 75%); }
 #fx { position: fixed; inset: 0; pointer-events: none; z-index: 40; }
 .empty { max-width: 360px; text-align: center; background: #fff; padding: 22px; border-radius: 16px; box-shadow: 0 10px 30px #0002; }
 code { background: #f0eef7; padding: 2px 6px; border-radius: 6px; }
@@ -510,8 +514,12 @@ const openWrap = $('#openWrap'), opening = $('#opening'), hint = $('#hint');
 // The tear is recorded from the pointer itself: every point the finger/cursor passes
 // (moving forward along the top) becomes part of the cut line, so the rip goes exactly where
 // you drag. Coordinates are stored normalized (0..1) so the tear survives a resize.
-const BAND = 0.04; // how far (fraction of pack height) the cut may wander above/below tearLine
-const clampY = yn => clamp(yn, CFG.tearLine - BAND, CFG.tearLine + BAND);
+// The cut follows the pointer's up/down movement, exaggerated by GAIN, so even a fairly straight
+// laptop swipe visibly bends the line. It may wander from just under the top crimp to a little
+// way into the art.
+const GAIN = 2.4, UP = 0.11, DOWN = 0.13;
+const clampY = yn => clamp(yn, CFG.tearLine - UP, CFG.tearLine + DOWN);
+const mapY = fy => clampY((CFG.tearLine * PH + (fy - tear.y0) * GAIN) / PH);
 const tearProg = () => { const p = tear.path; if (!tear.dir || !p.length) return 0; const t = p[p.length - 1]; return tear.dir > 0 ? t.x : 1 - t.x; };
 function extendTo(xn, yn) {
   const path = tear.path, last = path[path.length - 1];
@@ -542,7 +550,7 @@ function renderTear() {
   P.body.style.clipPath = P.body.style.webkitClipPath = px(body);
   // The torn strip bends up from the tip; pulling the finger above the line lifts it further.
   const prog = tearProg();
-  const pull = clamp((CFG.tearLine * PH - tear.fy) / PH * 70, -2, 12);
+  const pull = clamp((tear.y0 - tear.fy) / PH * 55, -2, 12);
   const ang = Math.max(0, 1.5 + prog * 5 + pull);
   P.flap.style.transformOrigin = `${tx * PW}px ${ty * PH}px`;
   P.flap.style.transform = `translateY(${-Math.max(0, pull) * 0.3}px) rotate(${-d * ang}deg)`;
@@ -572,7 +580,7 @@ function buildPackScreen(i) {
     </div>`;
   Object.assign(P, { area: $('#packArea'), pack: $('#pack'), body: $('#body'), flap: $('#flap'), glow: $('#tglow'), core: $('#tcore'),
     tip: $('#tip'), guide: $('#guide'), finger: $('#finger'), stack: $('#stack') });
-  tear = { dir: 0, path: [], jagN: 0, fy: CFG.tearLine * PH, done: false, lastBuzz: 0 };
+  tear = { dir: 0, path: [], jagN: 0, fy: CFG.tearLine * PH, y0: CFG.tearLine * PH, ty: CFG.tearLine, done: false, lastBuzz: 0 };
   renderTear();
   hint.textContent = 'Swipe across the top of the pack to open it';
   hint.style.opacity = 1;
@@ -598,21 +606,34 @@ async function selectPack() {
   state = 'selecting';
   cancelAnimationFrame(cAnim); cAnim = null; cpos = Math.round(cpos); layoutCarousel();
   const ci = chosen, centre = cEls[ci];
-  // 1. the other packs slide out sideways, the title and buttons fade, the chosen pack lifts up
+  // 1. the other packs fly out sideways, the title and buttons fade, the chosen pack dips then pops up
   cEls.forEach((el, i) => {
-    if (i === ci) return; const r = wrapRel(i - cpos), base = el.style.transform;
-    el.animate([{ transform: base, opacity: el.style.opacity }, { transform: `${base} translateX(${Math.sign(r || 1) * PW * 0.9}px)`, opacity: 0 }],
-      { duration: 380, easing: 'cubic-bezier(.4,0,.7,.4)', fill: 'forwards' });
+    if (i === ci) return; const r = Math.sign(wrapRel(i - cpos) || 1), base = el.style.transform;
+    el.animate([{ transform: base, opacity: el.style.opacity },
+      { transform: `${base} translateX(${r * PW * 1.4}px) rotateY(${r * 35}deg) scale(.85)`, opacity: 0 }],
+      { duration: 420, easing: 'cubic-bezier(.5,0,.75,.3)', fill: 'forwards' });
   });
-  fadeEls().forEach(el => el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(14px)' }], { duration: 260, fill: 'forwards' }));
-  centre.style.webkitBoxReflect = 'none';
-  const lift = centre.animate([{ transform: centre.style.transform },
-    { transform: `${centre.style.transform} translateY(-14px) scale(1.07)`, filter: 'brightness(1.12) drop-shadow(0 0 24px #ffffffaa)' }],
-    { duration: 300, easing: 'cubic-bezier(.3,1.4,.5,1)', fill: 'forwards' });
+  fadeEls().forEach(el => el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(18px)' }], { duration: 260, fill: 'forwards' }));
+  centre.style.setProperty('-webkit-box-reflect', 'none');
+  const base = centre.style.transform;
+  const lift = centre.animate([
+    { transform: base },
+    { transform: `${base} translateY(6px) scale(.95)`, offset: 0.28 },
+    { transform: `${base} translateY(-28px) scale(1.14)`, filter: 'brightness(1.25) drop-shadow(0 0 36px #ffffff)' }],
+    { duration: 440, easing: 'cubic-bezier(.3,1.45,.5,1)', fill: 'forwards' });
   Sound.whoosh();
-  await wait(330);
+  await wait(150);
+  // a burst of light at the moment it pops
+  const c = centreRect(ci), cx = c.left + c.width / 2, cy = c.top + c.height / 2, d = c.height * 0.9;
+  const ring = document.createElement('div'); ring.className = 'ring';
+  Object.assign(ring.style, { left: cx - d / 2 + 'px', top: cy - d / 2 + 'px', width: d + 'px', height: d + 'px' });
+  document.body.appendChild(ring);
+  ring.animate([{ transform: 'scale(.35)', opacity: .95 }, { transform: 'scale(1.9)', opacity: 0 }],
+    { duration: 650, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => ring.remove();
+  fx.burst(cx, cy, 48); buzz(15);
+  await wait(300);
   const from = centreRect(ci);
-  // 2. hand the pack over to the opening screen and glide it into place
+  // 2. hand the pack over to the opening screen; it swoops into place with a turn and settles
   buildPackScreen(ci);
   [hint, $('#backBtn')].forEach(el => { el.style.transition = 'none'; el.style.opacity = 0; });
   showInstant('opening');
@@ -622,13 +643,20 @@ async function selectPack() {
   }
   const to = P.area.getBoundingClientRect();
   const glide = P.area.animate([
-    { transform: flipFrom(from, to), filter: 'brightness(1.12)' },
-    { transform: `translateY(-10px) scale(1.035) rotateY(-7deg)`, filter: 'brightness(1.05)', offset: 0.6 },
-    { transform: 'none', filter: 'none' }], { duration: 720, easing: 'cubic-bezier(.3,.75,.25,1)' });
-  P.pack.style.setProperty('--mx', '0');
+    { transform: flipFrom(from, to), filter: 'brightness(1.25)' },
+    { transform: `translateY(-26px) scale(1.09) rotateY(-18deg)`, filter: 'brightness(1.12)', offset: 0.55 },
+    { transform: `translateY(3px) scale(.985) rotateY(5deg)`, filter: 'brightness(1.03)', offset: 0.82 },
+    { transform: 'none', filter: 'none' }], { duration: 860, easing: 'cubic-bezier(.3,.7,.3,1)' });
+  // a highlight sweeps across the foil as it turns
+  const t0 = now(); const sweep = () => { const k = (now() - t0) / 860; if (k > 1 || !P.pack) return;
+    P.pack.style.setProperty('--mx', (-0.2 + k * 1.4).toFixed(3)); requestAnimationFrame(sweep); }; sweep();
   await glide.finished.catch(() => {});
+  // a soft glow pulses behind the pack as it lands
+  const glow = document.createElement('div'); glow.className = 'land-glow'; openWrap.prepend(glow);
+  glow.animate([{ opacity: 0 }, { opacity: .85, offset: .3 }, { opacity: 0 }], { duration: 700, easing: 'ease-out' }).onfinish = () => glow.remove();
+  P.area.animate([{ transform: 'none' }, { transform: 'scale(1.02)' }, { transform: 'none' }], { duration: 260, easing: 'ease-out' });
   // 3. tidy up the carousel behind the scenes and bring in the hint
-  lift.cancel(); centre.style.webkitBoxReflect = '';
+  lift.cancel(); centre.style.removeProperty('-webkit-box-reflect');
   cEls.forEach(el => el.getAnimations().forEach(an => an.cancel()));
   fadeEls().forEach(el => el.getAnimations().forEach(an => an.cancel()));
   state = 'pack';
@@ -667,6 +695,8 @@ opening.addEventListener('pointerdown', e => {
     hint.classList.remove('nudge'); void hint.offsetWidth; hint.classList.add('nudge'); return;
   }
   drag = { sx: x, sy: y, lx: x, lt: now() };
+  // resuming a half-made tear: re-anchor so the cut carries on from its tip with no jump
+  if (tear.dir && tear.path.length) tear.y0 = y - (tear.ty * PH - CFG.tearLine * PH) / GAIN;
   // stop the idle tilt instantly so the cut lines up exactly under the finger
   tilt.x = tilt.y = 0; P.pack.style.transform = 'none';
   opening.setPointerCapture(e.pointerId);
@@ -683,7 +713,8 @@ opening.addEventListener('pointermove', e => {
       if (Math.abs(x - drag.sx) < 6) continue;
       tear.dir = x > drag.sx ? 1 : -1; state = 'tearing';
       // the cut starts at the pack edge, level with where the finger came in
-      tear.path = [{ x: tear.dir > 0 ? 0 : 1, y: clampY(drag.sy / PH), j: 0 }];
+      tear.y0 = drag.sy; tear.ty = CFG.tearLine;
+      tear.path = [{ x: tear.dir > 0 ? 0 : 1, y: tear.ty, j: 0 }];
       P.guide.style.opacity = 0; P.finger.style.opacity = 0; P.finger.style.animation = 'none';
       hint.style.opacity = 0;
       Sound.tearStart();
@@ -691,7 +722,7 @@ opening.addEventListener('pointermove', e => {
     tear.fy = y;
     const tipX = tear.path[tear.path.length - 1].x, xn = clamp(x / PW, 0, 1);
     const ahead = tear.dir > 0 ? xn > tipX : xn < tipX;
-    if (ahead && Math.abs(y - T) < Math.max(110, PH * 0.22)) { extendTo(xn, clampY(y / PH)); advanced = true; }
+    if (ahead && Math.abs(y - tear.y0) < PH * 0.35) { tear.ty = lerp(tear.ty, mapY(y), 0.6); extendTo(xn, tear.ty); advanced = true; }
   }
   if (!tear.dir) return;
   Sound.tearStart();
