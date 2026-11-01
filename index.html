@@ -1054,9 +1054,9 @@ async function startIntro() {
   $('#intro').classList.add('opening');
   Sound.whoosh();
   const ease = 'cubic-bezier(.6,0,.25,1)';
-  $('#ihTop').animate([{ transform: 'none' }, { transform: 'translateY(-58%) rotate(-3deg)' }], { duration: 850, easing: ease, fill: 'forwards' });
-  $('#ihBot').animate([{ transform: 'none' }, { transform: 'translateY(58%) rotate(2deg)' }], { duration: 850, easing: ease, fill: 'forwards' });
-  await wait(330);
+  $('#ihTop').animate([{ transform: 'none' }, { transform: 'translateY(-58%) rotate(-3deg)' }], { duration: 1200, easing: ease, fill: 'forwards' });
+  $('#ihBot').animate([{ transform: 'none' }, { transform: 'translateY(58%) rotate(2deg)' }], { duration: 1200, easing: ease, fill: 'forwards' });
+  await wait(470);
   // packs rise into the carousel one after another, then the title and buttons
   layoutCarousel();
   cEls.forEach(el => {
@@ -1067,7 +1067,7 @@ async function startIntro() {
   });
   fadeEls().forEach(el => el.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }],
     { duration: 500, delay: 380, easing: 'ease-out', fill: 'backwards' }));
-  await wait(560);
+  await wait(800);
   $('#intro').remove();
   state = 'carousel';
 }
