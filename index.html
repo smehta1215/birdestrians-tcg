@@ -99,7 +99,16 @@ img { -webkit-user-drag: none; }
 /* ---------- cards ---------- */
 .stack { position: absolute; left: 50%; top: calc(var(--ph) * .22); width: calc(var(--pw) * .86); height: calc(var(--pw) * .86 * 1.4);
   transform: translateX(-50%) translateY(var(--sy, 0px)) scale(var(--ss, 1)); transition: transform .7s cubic-bezier(.2,.8,.2,1); }
-.card { position: absolute; inset: 0; transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity .3s; perspective: 900px; }
+.card { position: absolute; inset: 0; perspective: 900px;
+  transition: transform .55s cubic-bezier(.22,.9,.3,1.12), opacity .45s ease, filter .5s ease; }
+.card.arrive .card-tilt { animation: arrive .6s cubic-bezier(.25,.9,.3,1.2); }
+@keyframes arrive { 0% { scale: .95; } 55% { scale: 1.025; } 100% { scale: 1; } }
+.face.front::after { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: linear-gradient(105deg, transparent 42%, #ffffff66 50%, transparent 58%); background-size: 260% 100%; mix-blend-mode: screen; }
+.card.arrive .face.front::after { animation: sweep-shine .9s .12s ease-out; }
+@keyframes sweep-shine { 0% { opacity: 1; background-position: 100% 0; } 100% { opacity: 1; background-position: -60% 0; } }
+.counter b, .counter span { display: inline-block; transition: transform .25s, opacity .25s; }
+.counter.bump b { transform: scale(1.15); }
 .card-tilt { position: absolute; inset: 0; transform-style: preserve-3d;
   transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
 .card-flip { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 1s cubic-bezier(.3,1.4,.4,1); }
@@ -662,9 +671,12 @@ function buildStack() {
 }
 function layoutStack() {
   cardEls.forEach((el, i) => {
-    const k = i - cur; if (k < 0) { el.style.display = 'none'; return; }
+    const k = i - cur;
+    if (k < 0) return; // already-dismissed cards finish their own fly-off animation
     const kk = Math.min(k, 3); el.style.zIndex = 100 - k;
-    el.style.transform = `translateY(${kk * 5}px) scale(${1 - kk * 0.025})`;
+    // cards further back sit lower, smaller and a little darker, so the next one visibly "steps up"
+    el.style.transform = `translateY(${kk * 9}px) scale(${1 - kk * 0.045})`;
+    el.style.filter = k === 0 ? 'none' : `brightness(${1 - kk * 0.13})`;
     el.style.opacity = k > 3 ? 0 : 1;
     el.classList.toggle('gift-ready', k === 0 && el.classList.contains('is-gift') && !giftRevealed);
   });
@@ -719,13 +731,25 @@ function fling(dir) {
   const el = cardEls[cur]; if (!el) return;
   if (el.classList.contains('is-gift') && !giftRevealed) { layoutStack(); return revealGift(el); }
   Sound.whoosh();
-  el.style.transition = 'transform .4s cubic-bezier(.4,0,.8,.6), opacity .4s';
-  el.style.transform = `translate(${dir * innerWidth * 0.9}px, ${-40}px) rotate(${dir * 28}deg)`;
-  el.style.opacity = 0;
+  // fly off from wherever the card currently is (mid-drag or resting) along a gentle arc
+  const from = getComputedStyle(el).transform, W = innerWidth;
+  el.style.transition = 'none'; el.style.zIndex = 200; el.classList.remove('arrive');
+  const anim = el.animate([
+    { transform: from === 'none' ? 'translate(0,0)' : from, opacity: 1 },
+    { transform: `translate(${dir * W * 0.22}px, -26px) rotate(${dir * 7}deg) scale(1.02)`, opacity: 1, offset: 0.3 },
+    { transform: `translate(${dir * W * 1.05}px, 50px) rotate(${dir * 26}deg) scale(.96)`, opacity: 0 }
+  ], { duration: 560, easing: 'cubic-bezier(.35,.05,.45,1)', fill: 'forwards' });
+  anim.onfinish = () => { el.style.display = 'none'; };
   cur++;
-  setTimeout(() => { el.style.display = 'none'; }, 420);
-  layoutStack(); updateCounter();
-  if (cur >= cardEls.length) setTimeout(showSummary, 450);
+  // the next card steps forward just after this one starts to leave
+  setTimeout(() => {
+    layoutStack();
+    const next = cardEls[cur];
+    if (next) { next.classList.remove('arrive'); void next.offsetWidth; next.classList.add('arrive'); }
+    updateCounter();
+    const c = $('#counter'); c.classList.add('bump'); setTimeout(() => c.classList.remove('bump'), 220);
+  }, 110);
+  if (cur >= cardEls.length) setTimeout(showSummary, 650);
 }
 async function revealGift(el) {
   state = 'revealing'; giftRevealed = true; updateCounterText('');
