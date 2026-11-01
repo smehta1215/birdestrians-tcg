@@ -142,11 +142,16 @@ img { -webkit-user-drag: none; }
 .card.gift-ready { animation: giftglow 1.4s ease-in-out infinite; }
 @keyframes giftglow { 0%,100% { filter: drop-shadow(0 0 10px #ffd34fbb) drop-shadow(0 0 24px #ff6fc855); }
   50% { filter: drop-shadow(0 0 22px #ffd34f) drop-shadow(0 0 46px #ff6fc8aa); } }
-.card.charging .card-tilt { animation: charge .7s ease-in forwards; }
-.card.charging { animation: chargeglow .7s ease-in forwards; }
+.card.charging .card-tilt { animation: chargeBig 1.25s linear forwards; }
+.card.charging { animation: chargeglow 1.25s ease-in forwards; }
+@keyframes chargeBig {
+  0% { transform: none; } 8% { transform: translateX(-3px) rotate(-2deg); } 16% { transform: translateX(3px) rotate(2deg); }
+  24% { transform: translateX(-4px) rotate(-3deg); } 32% { transform: translateX(5px) rotate(3.5deg); }
+  40% { transform: translateX(-6px) rotate(-4.5deg); } 48% { transform: translateX(7px) rotate(5deg); }
+  56% { transform: translateX(-8px) rotate(-6deg) scale(1.02); } 62% { transform: translateX(9px) rotate(6.5deg) scale(1.03); }
+  68% { transform: translateX(-10px) rotate(-7deg) scale(1.04); } 74% { transform: translateX(10px) rotate(7deg) scale(1.05); }
+  80% { transform: translateX(-8px) rotate(-5deg) scale(1.06); } 87% { transform: none; scale: .92; } 100% { transform: none; scale: 1.08; } }
 @keyframes chargeglow { 0% { filter: drop-shadow(0 0 18px #ffd34f); } 100% { filter: drop-shadow(0 0 40px #fff) brightness(1.3); } }
-@keyframes charge { 0% { transform: scale(1); } 60% { transform: scale(.94) rotate(-2deg); } 80% { transform: scale(.96) rotate(2deg); }
-  100% { transform: scale(1.04); } }
 .rays { position: absolute; left: 50%; top: 50%; width: 260vmax; height: 260vmax; margin: -130vmax 0 0 -130vmax; pointer-events: none;
   opacity: 0; transition: opacity 1s; z-index: -1;
   background: repeating-conic-gradient(from 0deg, #ffffff00 0deg 9deg, #fff4c860 9deg 18deg);
@@ -364,7 +369,9 @@ const Sound = {
   whoosh() { this.noiseHit('bandpass', 500, 2600, 0.28, 0.35, 0.8); },
   slide() { this.noiseHit('lowpass', 900, 2200, 0.5, 0.18); },
   tick() { this.tone(1400, 0, 0.04, 0.06, 'triangle'); },
-  charge() { this.tone(260, 0, 0.75, 0.12, 'sawtooth', 880); this.noiseHit('bandpass', 400, 4000, 0.75, 0.1, 2); },
+  charge(d = 0.75) { this.tone(260, 0, d, 0.12, 'sawtooth', 880); this.noiseHit('bandpass', 400, 4000, d, 0.1, 2); },
+  flip() { this.noiseHit('bandpass', 1500, 650, 0.12, 0.09, 0.9); },
+  ting() { this.tone(1568, 0, 0.5, 0.045); this.tone(2093, 0.07, 0.6, 0.035); },
   chimeSoft() { [784, 988, 1175, 1568].forEach((f, i) => this.tone(f, i * 0.07, 0.6, 0.05)); },
   chime() { [1046.5, 1318.5, 1568, 2093, 2637].forEach((f, i) => { this.tone(f, i * 0.08, 0.9, 0.16); this.tone(f * 2, i * 0.08, 0.4, 0.04); }); },
 };
@@ -859,10 +866,14 @@ async function finishTear() {
 }
 
 // ======================================================================= card viewer
-let cardEls = [], cur = 0, cardDrag = null, giftRevealed = false;
+// Every card comes out of the pack face-down. Tap (or swipe) the top card to flip it over, then tap or
+// swipe again to send it away and reveal the next face-down card. The gift card shakes before it flips.
+let cardEls = [], cur = 0, cardDrag = null;
+const isDown = el => el.classList.contains('facedown');
 function buildStack() {
-  P.stack.innerHTML = ''; cur = 0; giftRevealed = false;
-  cardEls = CARDS.map(c => { const el = buildCard(c, !!c.gift); if (c.gift) el.classList.add('is-gift'); P.stack.appendChild(el); return el; });
+  P.stack.innerHTML = ''; cur = 0;
+  cardEls = CARDS.map(c => { const el = buildCard(c, true); if (c.gift) el.classList.add('is-gift'); if (c.holo || c.gift) el.classList.add('is-holo');
+    P.stack.appendChild(el); return el; });
   layoutStack();
 }
 function layoutStack() {
@@ -870,17 +881,16 @@ function layoutStack() {
     const k = i - cur;
     if (k < 0) return; // already-dismissed cards finish their own fly-off animation
     const kk = Math.min(k, 3); el.style.zIndex = 100 - k;
-    // cards further back sit lower, smaller and a little darker, so the next one visibly "steps up"
     el.style.transform = `translateY(${kk * 9}px) scale(${1 - kk * 0.045})`;
     el.style.filter = k === 0 ? 'none' : `brightness(${1 - kk * 0.13})`;
     el.style.opacity = k > 3 ? 0 : 1;
-    el.classList.toggle('gift-ready', k === 0 && el.classList.contains('is-gift') && !giftRevealed);
+    el.classList.toggle('gift-ready', k === 0 && el.classList.contains('is-gift') && isDown(el));
   });
 }
 function updateCounter() {
   const el = $('#counter'); if (cur >= CARDS.length) { el.classList.remove('on'); return; }
-  const c = CARDS[cur];
-  const msg = c.gift && !giftRevealed ? 'Something special… tap to reveal ✨'
+  const top = cardEls[cur], gift = top.classList.contains('is-gift');
+  const msg = isDown(top) ? (gift ? 'Something special… tap to reveal ✨' : 'Tap to flip')
     : cur === CARDS.length - 1 ? 'Swipe to see your whole pack' : 'Swipe or tap for the next card';
   el.innerHTML = `<b>${cur + 1} / ${CARDS.length}</b><br>${msg}`; el.classList.add('on');
 }
@@ -893,7 +903,7 @@ opening.addEventListener('pointerdown', e => {
 });
 opening.addEventListener('pointermove', e => {
   if (state === 'cards' && !cardDrag) {
-    const el = cardEls[cur]; if (!el) return; const r = el.getBoundingClientRect();
+    const el = cardEls[cur]; if (!el || isDown(el)) return; const r = el.getBoundingClientRect();
     const ix = (e.clientX - r.left) / r.width, iy = (e.clientY - r.top) / r.height;
     if (ix >= 0 && ix <= 1 && iy >= 0 && iy <= 1 && e.pointerType === 'mouse') { tilt.hoverCard = now(); setCardLight(el, ix, iy); }
     return;
@@ -902,7 +912,7 @@ opening.addEventListener('pointermove', e => {
   const dx = e.clientX - cardDrag.x, dy = e.clientY - cardDrag.y, t = now();
   cardDrag.v = (e.clientX - cardDrag.lx) / Math.max(1, t - cardDrag.lt); cardDrag.lx = e.clientX; cardDrag.lt = t;
   const el = cardDrag.el;
-  if (el.classList.contains('is-gift') && !giftRevealed) return;
+  if (isDown(el)) return; // face-down cards flip rather than drag
   el.style.transform = `translate(${dx}px, ${dy * 0.3}px) rotate(${dx * 0.05}deg)`;
   tilt.hoverCard = now();
   setCardLight(el, clamp(.5 + dx / (PW * 1.4), 0, 1), clamp(.4 + dy / (PH * 1.2), 0, 1), .5);
@@ -911,6 +921,7 @@ const endCard = e => {
   if (!cardDrag) return; const d = cardDrag; cardDrag = null;
   const dx = e.clientX - d.x, dy = e.clientY - d.y;
   d.el.style.transition = '';
+  if (isDown(d.el)) return tapCard(); // a tap or a swipe both flip a face-down card
   if (Math.hypot(dx, dy) < 8 && now() - d.t < 400) return tapCard();
   if (Math.abs(dx) > PW * 0.3 || Math.abs(d.v) > 0.55) return fling(Math.sign(dx || d.v));
   layoutStack();
@@ -920,14 +931,35 @@ opening.addEventListener('pointercancel', endCard);
 
 function tapCard() {
   if (state !== 'cards') return; const el = cardEls[cur]; if (!el) return;
-  if (el.classList.contains('is-gift') && !giftRevealed) return revealGift(el);
+  if (isDown(el)) return el.classList.contains('is-gift') ? revealGift(el) : flipCard(el);
   fling(-1);
+}
+// Turn a card over in two halves, swapping faces when it is edge-on, with a small lift and wobble.
+async function flipOver(el, wobble = 10, dur = 560) {
+  const flip = el.querySelector('.card-flip'), base = el.style.transform || 'none';
+  el.animate([{ transform: base }, { transform: `${base} translateY(-16px) scale(1.05)`, offset: 0.4 }, { transform: base }],
+    { duration: 200 + dur, easing: 'cubic-bezier(.3,.7,.4,1)' });
+  const half = flip.animate([{ transform: 'rotateY(180deg)' }, { transform: 'rotateY(90deg)' }],
+    { duration: 190, easing: 'cubic-bezier(.5,0,1,1)', fill: 'forwards' });
+  await half.finished.catch(() => {});
+  el.classList.remove('facedown');
+  flip.animate([{ transform: 'rotateY(90deg)' }, { transform: `rotateY(${-wobble}deg)`, offset: 0.55 },
+    { transform: `rotateY(${wobble * 0.3}deg)`, offset: 0.8 }, { transform: 'rotateY(0deg)' }], { duration: dur, easing: 'cubic-bezier(0,0,.4,1)' });
+  half.cancel();
+}
+async function flipCard(el) {
+  state = 'flipping'; Sound.flip(); buzz(6);
+  await flipOver(el);
+  if (el.classList.contains('is-holo')) {
+    const r = el.getBoundingClientRect(); fx.burst(r.left + r.width / 2, r.top + r.height / 2, 30); Sound.ting();
+  }
+  await wait(120);
+  state = 'cards'; updateCounter();
 }
 function fling(dir) {
   const el = cardEls[cur]; if (!el) return;
-  if (el.classList.contains('is-gift') && !giftRevealed) { layoutStack(); return revealGift(el); }
+  if (isDown(el)) { layoutStack(); return tapCard(); }
   Sound.whoosh();
-  // fly off from wherever the card currently is (mid-drag or resting) along a gentle arc
   const from = getComputedStyle(el).transform, W = innerWidth;
   el.style.transition = 'none'; el.style.zIndex = 200; el.classList.remove('arrive');
   const anim = el.animate([
@@ -937,7 +969,6 @@ function fling(dir) {
   ], { duration: 560, easing: 'cubic-bezier(.35,.05,.45,1)', fill: 'forwards' });
   anim.onfinish = () => { el.style.display = 'none'; };
   cur++;
-  // the next card steps forward just after this one starts to leave
   setTimeout(() => {
     layoutStack();
     const next = cardEls[cur];
@@ -948,22 +979,18 @@ function fling(dir) {
   if (cur >= cardEls.length) setTimeout(showSummary, 650);
 }
 async function revealGift(el) {
-  state = 'revealing'; giftRevealed = true; updateCounterText('');
+  state = 'revealing'; updateCounterText('');
   el.classList.remove('gift-ready'); el.classList.add('charging');
-  Sound.charge(); buzz([10, 40, 10, 40, 20]);
-  await wait(700);
+  Sound.charge(1.25); buzz([15, 50, 15, 50, 20, 40, 30, 30, 40]);
+  // sparks crackle off the card while it shakes, faster as it builds
+  const r0 = el.getBoundingClientRect(), t0 = now();
+  const crackle = setInterval(() => { const k = (now() - t0) / 1250;
+    fx.spark(r0.left + Math.random() * r0.width, r0.top + Math.random() * r0.height, 1 + Math.round(k * 4), 0); }, 70);
+  await wait(1250);
+  clearInterval(crackle);
   el.classList.remove('charging');
-  // Flip in two halves and swap faces when the card is edge-on (90deg), so no browser ever shows
-  // the wrong side.
-  const flip = el.querySelector('.card-flip');
-  const half = flip.animate([{ transform: 'rotateY(180deg)' }, { transform: 'rotateY(90deg)' }],
-    { duration: 240, easing: 'cubic-bezier(.5,0,1,1)', fill: 'forwards' });
-  await half.finished.catch(() => {});
-  el.classList.remove('facedown');
+  await flipOver(el, 14, 700);
   $('#rays').classList.add('on');
-  const rest = flip.animate([{ transform: 'rotateY(90deg)' }, { transform: 'rotateY(-14deg)', offset: 0.55 }, { transform: 'rotateY(4deg)', offset: 0.8 }, { transform: 'rotateY(0deg)' }],
-    { duration: 700, easing: 'cubic-bezier(0,0,.4,1)' });
-  half.cancel();
   await wait(140);
   const r = el.getBoundingClientRect();
   fx.confetti(r.left + r.width / 2, r.top + r.height * 0.35, 180);
