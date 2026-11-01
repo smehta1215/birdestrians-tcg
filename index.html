@@ -581,25 +581,78 @@ function buildPackScreen(i) {
   buildStack();
 }
 
+// Switch screens with no cross-fade, so a pack can hand off seamlessly between them.
+function showInstant(id) {
+  const scr = document.querySelectorAll('.screen');
+  scr.forEach(x => x.style.transition = 'none'); show(id); void document.body.offsetWidth;
+  scr.forEach(x => x.style.transition = '');
+}
+const fadeEls = () => [$('#ctitle'), document.querySelector('#carousel .bottom-row')];
+const centreRect = i => cEls[i].getBoundingClientRect();
+function flipFrom(rect, to) {
+  return `translate(${rect.left + rect.width / 2 - (to.left + to.width / 2)}px, ${rect.top + rect.height / 2 - (to.top + to.height / 2)}px) scale(${rect.height / to.height})`;
+}
+
 async function selectPack() {
   if (state !== 'carousel') return;
+  state = 'selecting';
   cancelAnimationFrame(cAnim); cAnim = null; cpos = Math.round(cpos); layoutCarousel();
-  const ci = chosen;
-  const from = cEls[ci].getBoundingClientRect();
+  const ci = chosen, centre = cEls[ci];
+  // 1. the other packs slide out sideways, the title and buttons fade, the chosen pack lifts up
+  cEls.forEach((el, i) => {
+    if (i === ci) return; const r = wrapRel(i - cpos), base = el.style.transform;
+    el.animate([{ transform: base, opacity: el.style.opacity }, { transform: `${base} translateX(${Math.sign(r || 1) * PW * 0.9}px)`, opacity: 0 }],
+      { duration: 380, easing: 'cubic-bezier(.4,0,.7,.4)', fill: 'forwards' });
+  });
+  fadeEls().forEach(el => el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(14px)' }], { duration: 260, fill: 'forwards' }));
+  centre.style.webkitBoxReflect = 'none';
+  const lift = centre.animate([{ transform: centre.style.transform },
+    { transform: `${centre.style.transform} translateY(-14px) scale(1.07)`, filter: 'brightness(1.12) drop-shadow(0 0 24px #ffffffaa)' }],
+    { duration: 300, easing: 'cubic-bezier(.3,1.4,.5,1)', fill: 'forwards' });
+  Sound.whoosh();
+  await wait(330);
+  const from = centreRect(ci);
+  // 2. hand the pack over to the opening screen and glide it into place
   buildPackScreen(ci);
-  state = 'pack'; show('opening');
+  [hint, $('#backBtn')].forEach(el => { el.style.transition = 'none'; el.style.opacity = 0; });
+  showInstant('opening');
+  hint.style.transition = '';
   if (!CARDS.length) {
     hint.innerHTML = '<div class="empty">No cards found yet. Add images to the <code>cards</code> folder and run <code>python3 update_cards.py</code>.</div>';
   }
   const to = P.area.getBoundingClientRect();
-  const s = from.height / to.height;
-  P.area.animate([
-    { transform: `translate(${from.left + from.width / 2 - (to.left + to.width / 2)}px, ${from.top + from.height / 2 - (to.top + to.height / 2)}px) scale(${s})` },
-    { transform: 'none' }], { duration: 650, easing: 'cubic-bezier(.2,.9,.25,1.1)' });
+  const glide = P.area.animate([
+    { transform: flipFrom(from, to), filter: 'brightness(1.12)' },
+    { transform: `translateY(-10px) scale(1.035) rotateY(-7deg)`, filter: 'brightness(1.05)', offset: 0.6 },
+    { transform: 'none', filter: 'none' }], { duration: 720, easing: 'cubic-bezier(.3,.75,.25,1)' });
+  P.pack.style.setProperty('--mx', '0');
+  await glide.finished.catch(() => {});
+  // 3. tidy up the carousel behind the scenes and bring in the hint
+  lift.cancel(); centre.style.webkitBoxReflect = '';
+  cEls.forEach(el => el.getAnimations().forEach(an => an.cancel()));
+  fadeEls().forEach(el => el.getAnimations().forEach(an => an.cancel()));
+  state = 'pack';
+  hint.style.opacity = 1; $('#backBtn').style.transition = 'opacity .35s'; $('#backBtn').style.opacity = 1;
 }
 
-$('#backBtn').addEventListener('click', () => {
-  if (state !== 'pack') return; state = 'carousel'; show('carousel');
+$('#backBtn').addEventListener('click', async () => {
+  if (state !== 'pack') return;
+  state = 'closing';
+  hint.style.opacity = 0; $('#backBtn').style.opacity = 0;
+  layoutCarousel();
+  const to = P.area.getBoundingClientRect(), target = centreRect(chosen);
+  const shrink = P.area.animate([{ transform: 'none' }, { transform: flipFrom(target, to) }],
+    { duration: 420, easing: 'cubic-bezier(.45,0,.3,1)', fill: 'forwards' });
+  await shrink.finished.catch(() => {});
+  showInstant('carousel');
+  state = 'carousel'; layoutCarousel();
+  // other packs slide back in, title and buttons fade back
+  cEls.forEach((el, i) => {
+    if (i === chosen) return; const r = wrapRel(i - cpos), base = el.style.transform;
+    el.animate([{ transform: `${base} translateX(${Math.sign(r || 1) * PW * 0.9}px)`, opacity: 0 }, { transform: base, opacity: el.style.opacity }],
+      { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)' });
+  });
+  fadeEls().forEach(el => el.animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 350, easing: 'ease-out' }));
 });
 
 function localXY(e) { const r = P.area.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
