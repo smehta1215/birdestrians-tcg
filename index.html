@@ -459,46 +459,49 @@ const P = {}; // current pack screen elements
 let tear = null, drag = null;
 const openWrap = $('#openWrap'), opening = $('#opening'), hint = $('#hint');
 
-function jag() {
-  const n = 30, pts = [];
-  for (let i = 0; i <= n; i++) {
-    const amp = (i % 2 ? 1 : -1) * (0.0035 + Math.random() * 0.004) + (Math.random() - .5) * 0.003;
-    pts.push({ x: i / n, y: CFG.tearLine + (i === 0 || i === n ? 0 : amp) });
+// The tear is recorded from the pointer itself: every point the finger/cursor passes
+// (moving forward along the top) becomes part of the cut line, so the rip goes exactly where
+// you drag. Coordinates are stored normalized (0..1) so the tear survives a resize.
+const BAND = 0.04; // how far (fraction of pack height) the cut may wander above/below tearLine
+const clampY = yn => clamp(yn, CFG.tearLine - BAND, CFG.tearLine + BAND);
+const tearProg = () => { const p = tear.path; if (!tear.dir || !p.length) return 0; const t = p[p.length - 1]; return tear.dir > 0 ? t.x : 1 - t.x; };
+function extendTo(xn, yn) {
+  const path = tear.path, last = path[path.length - 1];
+  const n = Math.max(1, Math.ceil(Math.abs(xn - last.x) * PW / 5)); // a point every ~5px
+  for (let i = 1; i <= n; i++) {
+    const k = i / n; tear.jagN++;
+    // tiny alternating offsets give the cut a torn-foil edge without moving it off the finger
+    const j = ((tear.jagN % 2) ? 1 : -1) * (0.6 + Math.random() * 1.6) / PH;
+    path.push({ x: lerp(last.x, xn, k), y: lerp(last.y, yn, k), j });
   }
-  return pts;
-}
-function yAt(xn) {
-  const p = tear.pts; for (let i = 1; i < p.length; i++) if (xn <= p[i].x) {
-    const k = (xn - p[i - 1].x) / (p[i].x - p[i - 1].x); return lerp(p[i - 1].y, p[i].y, k); }
-  return p[p.length - 1].y;
 }
 const px = pts => 'polygon(' + pts.map(([x, y]) => `${(x * PW).toFixed(1)}px ${(y * PH).toFixed(1)}px`).join(',') + ')';
 
 function renderTear() {
-  const { dir, prog, pts } = tear;
-  const d = dir || 1;
-  const c = d > 0 ? prog : 1 - prog, yc = yAt(c);
-  let flap, body, line;
-  if (d > 0) {
-    const inner = pts.filter(p => p.x < c);
-    flap = [[0, -0.05], [c, -0.05], [c, yc], ...inner.slice().reverse().map(p => [p.x, p.y])];
-    body = [[0, 1.05], ...inner.map(p => [p.x, p.y]), [c, yc], [c, -0.05], [1.05, -0.05], [1.05, 1.05]];
-    line = [...inner.map(p => [p.x, p.y]), [c, yc]];
-  } else {
-    const inner = pts.filter(p => p.x > c);
-    flap = [[1, -0.05], [c, -0.05], [c, yc], ...inner.map(p => [p.x, p.y])];
-    body = [[1, 1.05], ...inner.slice().reverse().map(p => [p.x, p.y]), [c, yc], [c, -0.05], [-0.05, -0.05], [-0.05, 1.05]];
-    line = [...inner.slice().reverse().map(p => [p.x, p.y]), [c, yc]];
+  const path = tear.path, d = tear.dir;
+  if (!d || path.length < 2) {
+    P.flap.style.clipPath = P.flap.style.webkitClipPath = 'polygon(0 0, 0 0, 0 0)';
+    P.body.style.clipPath = P.body.style.webkitClipPath = 'none';
+    P.glow.setAttribute('d', ''); P.core.setAttribute('d', '');
+    return null;
   }
+  const pts = path.map((p, i) => [p.x, p.y + (i === path.length - 1 ? 0 : p.j)]);
+  const [tx, ty] = pts[pts.length - 1];
+  const s = d > 0 ? 0 : 1, far = d > 0 ? 1.05 : -0.05;
+  const flap = [[s, -0.05], [tx, -0.05], ...pts.slice().reverse()];
+  const body = [[s, 1.05], ...pts, [tx, -0.05], [far, -0.05], [far, 1.05]];
   P.flap.style.clipPath = P.flap.style.webkitClipPath = px(flap);
   P.body.style.clipPath = P.body.style.webkitClipPath = px(body);
-  const ang = prog > 0 ? (2 + prog * 7) : 0;
-  P.flap.style.transformOrigin = `${c * PW}px ${yc * PH}px`;
-  P.flap.style.transform = `translateY(${-prog * 3}px) rotate(${-d * ang}deg)`;
-  const dstr = line.length > 1 ? 'M' + line.map(([x, y]) => `${(x * PW).toFixed(1)} ${(y * PH).toFixed(1)}`).join(' L') : '';
+  // The torn strip bends up from the tip; pulling the finger above the line lifts it further.
+  const prog = tearProg();
+  const pull = clamp((CFG.tearLine * PH - tear.fy) / PH * 70, -2, 12);
+  const ang = Math.max(0, 1.5 + prog * 5 + pull);
+  P.flap.style.transformOrigin = `${tx * PW}px ${ty * PH}px`;
+  P.flap.style.transform = `translateY(${-Math.max(0, pull) * 0.3}px) rotate(${-d * ang}deg)`;
+  const dstr = 'M' + pts.map(([x, y]) => `${(x * PW).toFixed(1)} ${(y * PH).toFixed(1)}`).join(' L');
   P.glow.setAttribute('d', dstr); P.core.setAttribute('d', dstr);
-  P.tip.style.left = c * PW + 'px'; P.tip.style.top = yc * PH + 'px';
-  return { x: c * PW, y: yc * PH };
+  P.tip.style.left = tx * PW + 'px'; P.tip.style.top = ty * PH + 'px';
+  return { x: tx * PW, y: ty * PH };
 }
 
 function buildPackScreen(i) {
@@ -521,7 +524,7 @@ function buildPackScreen(i) {
     </div>`;
   Object.assign(P, { area: $('#packArea'), pack: $('#pack'), body: $('#body'), flap: $('#flap'), glow: $('#tglow'), core: $('#tcore'),
     tip: $('#tip'), guide: $('#guide'), finger: $('#finger'), stack: $('#stack') });
-  tear = { dir: 0, prog: 0, pts: jag(), done: false, lastBuzz: 0 };
+  tear = { dir: 0, path: [], jagN: 0, fy: CFG.tearLine * PH, done: false, lastBuzz: 0 };
   renderTear();
   hint.textContent = 'Swipe across the top of the pack to open it';
   hint.style.opacity = 1;
@@ -562,32 +565,45 @@ opening.addEventListener('pointerdown', e => {
   if (Math.abs(y - T) > band || x < -70 || x > PW + 70) {
     hint.classList.remove('nudge'); void hint.offsetWidth; hint.classList.add('nudge'); return;
   }
-  drag = { sx: x, lx: x, lt: now() };
+  drag = { sx: x, sy: y, lx: x, lt: now() };
+  // stop the idle tilt instantly so the cut lines up exactly under the finger
+  tilt.x = tilt.y = 0; P.pack.style.transform = 'none';
   opening.setPointerCapture(e.pointerId);
 });
 opening.addEventListener('pointermove', e => {
-  if (!drag || tear.done) return;
-  const { x, y } = localXY(e), T = CFG.tearLine * PH, t = now();
-  if (!tear.dir) {
-    if (Math.abs(x - drag.sx) < 8) return;
-    tear.dir = x > drag.sx ? 1 : -1; state = 'tearing';
-    P.guide.style.opacity = 0; P.finger.style.opacity = 0; P.finger.style.animation = 'none';
-    hint.style.opacity = 0;
+  if (!drag || tear.done || state === 'opening') return;
+  const evs = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e];
+  const T = CFG.tearLine * PH, t = now();
+  let advanced = false, lastX = drag.lx;
+  for (const ev of evs) {
+    const { x, y } = localXY(ev);
+    lastX = x;
+    if (!tear.dir) {
+      if (Math.abs(x - drag.sx) < 6) continue;
+      tear.dir = x > drag.sx ? 1 : -1; state = 'tearing';
+      // the cut starts at the pack edge, level with where the finger came in
+      tear.path = [{ x: tear.dir > 0 ? 0 : 1, y: clampY(drag.sy / PH), j: 0 }];
+      P.guide.style.opacity = 0; P.finger.style.opacity = 0; P.finger.style.animation = 'none';
+      hint.style.opacity = 0;
+      Sound.tearStart();
+    }
+    tear.fy = y;
+    const tipX = tear.path[tear.path.length - 1].x, xn = clamp(x / PW, 0, 1);
+    const ahead = tear.dir > 0 ? xn > tipX : xn < tipX;
+    if (ahead && Math.abs(y - T) < Math.max(110, PH * 0.22)) { extendTo(xn, clampY(y / PH)); advanced = true; }
   }
+  if (!tear.dir) return;
   Sound.tearStart();
-  const speed = Math.abs(x - drag.lx) / Math.max(1, t - drag.lt);
-  drag.lx = x; drag.lt = t;
-  const inBand = Math.abs(y - T) < Math.max(110, PH * 0.22);
-  const reach = clamp(tear.dir > 0 ? x / PW : (PW - x) / PW, 0, 1);
-  if (inBand && reach > tear.prog) {
-    tear.prog = reach;
-    const tip = renderTear();
+  const speed = Math.abs(lastX - drag.lx) / Math.max(1, t - drag.lt);
+  drag.lx = lastX; drag.lt = t;
+  const tip = renderTear();
+  if (advanced && tip) {
     P.tip.style.opacity = 1;
     const r = P.area.getBoundingClientRect();
-    fx.spark(r.left + tip.x, r.top + tip.y, 2 + Math.round(speed * 3), -tear.dir * 0.6);
+    fx.spark(r.left + tip.x, r.top + tip.y, 1 + Math.round(speed * 3), -tear.dir * 0.6);
     Sound.tearUpdate(speed);
-    const b = Math.floor(tear.prog * 14); if (b !== tear.lastBuzz) { tear.lastBuzz = b; buzz(6); }
-    if (tear.prog >= 0.84) finishTear();
+    const b = Math.floor(tearProg() * 16); if (b !== tear.lastBuzz) { tear.lastBuzz = b; buzz(6); }
+    if (tearProg() >= 0.97) finishTear();
   } else Sound.tearUpdate(0);
 });
 const endDrag = () => {
@@ -602,9 +618,9 @@ async function finishTear() {
   if (tear.done) return; tear.done = true; state = 'opening'; drag = null;
   $('#backBtn').style.display = 'none';
   // run the cut the rest of the way
-  const start = tear.prog, t0 = now(), r = P.area.getBoundingClientRect();
+  const last = tear.path[tear.path.length - 1], sx = last.x, ex = tear.dir > 0 ? 1 : 0, t0 = now(), r = P.area.getBoundingClientRect();
   await new Promise(res => { const step = () => {
-    const k = clamp((now() - t0) / 120, 0, 1); tear.prog = lerp(start, 1, k); const tip = renderTear();
+    const k = clamp((now() - t0) / 90, 0, 1); extendTo(lerp(sx, ex, k), last.y); const tip = renderTear();
     fx.spark(r.left + tip.x, r.top + tip.y, 3, -tear.dir * .6); Sound.tearUpdate(1.2);
     k < 1 ? requestAnimationFrame(step) : res(); }; step(); });
   Sound.tearStop(); Sound.pop(); buzz(25);
