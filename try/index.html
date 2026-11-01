@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<base href="../">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Birdestrians Pack Opening (try-out)</title>
+<meta name="description" content="A special pack of Birdestrians cards is waiting for you. Swipe to open!">
+<meta property="og:title" content="Birdestrians Pack Opening">
+<meta property="og:description" content="A special pack of Birdestrians cards is waiting for you. Swipe to open!">
+<meta name="theme-color" content="#5b3fd6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+@property --c1 { syntax: '<color>'; inherits: true; initial-value: #5b3fd6; }
+@property --c2 { syntax: '<color>'; inherits: true; initial-value: #c9b8ff; }
+:root { --pw: 300px; --ph: 520px; --c1: #5b3fd6; --c2: #c9b8ff; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body {
+  font-family: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif; color: #2a2540;
+  user-select: none; -webkit-user-select: none; touch-action: none;
+  transition: --c1 .7s ease, --c2 .7s ease; overscroll-behavior: none;
+  background: linear-gradient(162deg, var(--c2) 0%, var(--c2) 36%, #f4f3f9 36.2%, #ffffff 100%);
+  background:
+    radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--c2) 70%, white) 0%, transparent 70%),
+    linear-gradient(162deg, var(--c2) 0%, color-mix(in srgb, var(--c2) 60%, white) 36%, #f4f3f9 36.2%, #ffffff 100%);
+}
+button { font-family: inherit; }
+img { -webkit-user-drag: none; }
+
+/* ---------- top bar ---------- */
+.topbar { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px; z-index: 50; pointer-events: none; }
+.brand { pointer-events: auto; background: #ffffffcc; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border-radius: 999px; padding: 6px 14px;
+  font-weight: 700; letter-spacing: 2px; font-size: 13px; color: var(--c1); box-shadow: 0 2px 10px #0000001a; }
+.icon-btn { pointer-events: auto; width: 40px; height: 40px; border-radius: 50%; border: 0; background: #ffffffcc;
+  box-shadow: 0 2px 10px #0000001a; font-size: 18px; cursor: pointer; color: #555; display: grid; place-items: center; }
+
+/* ---------- screens ---------- */
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .45s ease; }
+.screen.active { opacity: 1; pointer-events: auto; }
+
+/* ---------- carousel ---------- */
+.carousel-title { position: absolute; top: max(70px, 9vh); left: 0; right: 0; text-align: center; font-weight: 700;
+  font-size: clamp(20px, 5vw, 30px); color: #fff; text-shadow: 0 2px 12px #0004; text-shadow: 0 2px 12px color-mix(in srgb, var(--c1) 70%, transparent); padding: 0 20px; }
+.carousel-stage { position: relative; width: 100%; height: calc(var(--ph) * 1.25); perspective: 1100px; cursor: grab; }
+.carousel-stage:active { cursor: grabbing; }
+.cpack { position: absolute; left: 50%; top: 46%; width: var(--pw); height: var(--ph); will-change: transform;
+  -webkit-box-reflect: below 6px linear-gradient(transparent 62%, #ffffff55); }
+.cpack .float { width: 100%; height: 100%; position: relative; }
+.cpack.center .float { animation: bob 3.2s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(-8px); } }
+.pack-art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: fill;
+  filter: drop-shadow(0 14px 22px #0000003a); }
+.shine { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; opacity: .85;
+  background: linear-gradient(105deg, transparent 30%, #ffffff00 38%, #ffffff66 46%, #ffffff22 50%, transparent 58%);
+  background-size: 300% 100%; background-position: calc(var(--mx, .5) * 100%) 0;
+  -webkit-mask: linear-gradient(#000 0 0); }
+.carousel-name { margin-top: 4px; font-weight: 700; font-size: 20px; color: #2a2540; min-height: 28px; }
+.btn { border: 0; border-radius: 999px; padding: 14px 58px; font-size: 20px; font-weight: 700; cursor: pointer;
+  color: #0d5c4e; background: linear-gradient(180deg, #8ff5d8, #4fe0bd); box-shadow: 0 6px 0 #2fb898, 0 10px 24px #2fb89855;
+  transition: transform .1s; }
+.btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #2fb898; }
+.btn.ghost { white-space: nowrap; background: #fff; color: #555; box-shadow: 0 4px 0 #d6d3e2, 0 8px 18px #0000001a; padding: 12px 26px; font-size: 16px; }
+.dots { display: flex; gap: 8px; margin-top: 18px; }
+.dots span { width: 8px; height: 8px; border-radius: 50%; background: #c9c4dc; transition: all .3s; }
+.dots span.on { background: var(--c1); width: 22px; border-radius: 4px; }
+.bottom-row { position: absolute; bottom: max(22px, 3vh); display: flex; flex-direction: column; align-items: center; }
+
+/* ---------- opening ---------- */
+.open-wrap { position: relative; width: var(--pw); height: var(--ph); perspective: 1000px; }
+.pack-area { position: absolute; inset: 0; }
+.pack { position: absolute; inset: 0; transform-style: preserve-3d; will-change: transform; }
+.layer { position: absolute; inset: 0; will-change: clip-path, transform; }
+.layer .pack-art { filter: none; }
+.pack-shadow { position: absolute; inset: 4% 3% 0; border-radius: 6px; box-shadow: 0 24px 40px #00000040; }
+.tearsvg { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+.tearsvg path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.tip { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle, #fff 0 6%, #fffbe0dd 12%, #ffe9887a 26%, #ffd34f22 45%, transparent 66%);
+  mix-blend-mode: screen; transition: opacity .2s; }
+.tip::after { content: ''; position: absolute; left: 50%; top: 50%; width: 180px; height: 6px; margin: -3px 0 0 -90px;
+  background: radial-gradient(closest-side, #fff, #fff6 50%, transparent); }
+.guide { position: absolute; left: -4%; right: -4%; height: 4px; margin-top: -2px; pointer-events: none; transition: opacity .3s; }
+.guide::before { content: ''; position: absolute; inset: 0; border-top: 2px dashed #ffffffcc; top: 1px; filter: drop-shadow(0 0 3px #fff); }
+.guide::after { content: ''; position: absolute; top: -10px; width: 24px; height: 24px; border-radius: 50%;
+  background: radial-gradient(circle, #fff, #fff8 40%, transparent 70%); animation: sweep 1.8s ease-in-out infinite; }
+@keyframes sweep { 0% { left: 0; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: calc(100% - 24px); opacity: 0; } }
+.finger { position: absolute; font-size: 34px; pointer-events: none; animation: finger 1.8s ease-in-out infinite; transition: opacity .3s;
+  filter: drop-shadow(0 3px 6px #0004); }
+@keyframes finger { 0% { left: 0; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: 92%; opacity: 0; } }
+.hint { margin-top: 26px; font-weight: 600; font-size: 17px; color: #4a4560; text-align: center; min-height: 24px; padding: 0 20px; transition: opacity .3s; }
+.hint.nudge { animation: nudge .4s; }
+@keyframes nudge { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.back-btn { position: absolute; left: 16px; bottom: max(22px, 3vh); }
+
+/* ---------- cards ---------- */
+.stack { position: absolute; left: 50%; top: calc(var(--ph) * .22); width: calc(var(--pw) * .86); height: calc(var(--pw) * .86 * 1.4);
+  transform: translateX(-50%) translateY(var(--sy, 0px)) scale(var(--ss, 1)); transition: transform .7s cubic-bezier(.2,.8,.2,1); }
+.card { position: absolute; inset: 0; perspective: 900px;
+  transition: transform .55s cubic-bezier(.22,.9,.3,1.12), opacity .45s ease, filter .5s ease; }
+.card.arrive .card-tilt { animation: arrive .6s cubic-bezier(.25,.9,.3,1.2); }
+@keyframes arrive { 0% { scale: .95; } 55% { scale: 1.025; } 100% { scale: 1; } }
+.face.front::after { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: linear-gradient(105deg, transparent 42%, #ffffff66 50%, transparent 58%); background-size: 260% 100%; mix-blend-mode: screen; }
+.card.arrive .face.front::after { animation: sweep-shine .9s .12s ease-out; }
+@keyframes sweep-shine { 0% { opacity: 1; background-position: 100% 0; } 100% { opacity: 1; background-position: -60% 0; } }
+.counter b, .counter span { display: inline-block; transition: transform .25s, opacity .25s; }
+.counter.bump b { transform: scale(1.15); }
+.card-tilt { position: absolute; inset: 0; transform-style: preserve-3d;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
+.card-flip { position: absolute; inset: 0; transform-style: preserve-3d; }
+.card.facedown .card-flip { transform: rotateY(180deg); }
+/* Which face shows is set explicitly, not left to backface-visibility alone: Firefox can show a face that
+   should be hidden when it contains blend-mode layers (the holo shimmer), giving a mirrored, see-through card. */
+.card.facedown .face.front, .card:not(.facedown) .face.back { visibility: hidden; }
+.face { position: absolute; inset: 0; border-radius: 5.3% / 3.8%; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  box-shadow: 0 10px 26px #00000038; background: #ddd; isolation: isolate; }
+.face img, .face svg { width: 100%; height: 100%; display: block; object-fit: cover; }
+.face.back { transform: rotateY(180deg); }
+.holo { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color-dodge; opacity: .36; filter: saturate(1.6);
+  background: repeating-linear-gradient(115deg, #ff6fc8 0%, #ffd36e 7%, #6dffc4 14%, #5cc7ff 21%, #b98bff 28%, #ff6fc8 35%);
+  background-size: 400% 400%; background-position: calc(var(--px, .5) * 100%) calc(var(--py, .5) * 100%); }
+.holo-hue { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color; opacity: .42;
+  background: repeating-linear-gradient(115deg, #ff3fa4 0%, #ffb02e 6%, #f9f53b 10%, #2fe88a 15%, #22b8ff 21%, #7a5cff 27%, #ff3fa4 33%);
+  background-size: 400% 400%; background-position: calc(var(--px, .5) * 130%) calc(var(--py, .5) * 100%); }
+.holo::before { content: ''; position: absolute; inset: 0; mix-blend-mode: soft-light; opacity: .9;
+  background: repeating-linear-gradient(65deg, #ffffff00 0%, #ffffff88 3%, #ffffff00 6%, #ffffff00 11%);
+  background-size: 300% 300%; background-position: calc(var(--px, .5) * -150%) calc(var(--py, .5) * 100%); }
+.holo::after { content: ''; position: absolute; inset: 0; opacity: .8; mix-blend-mode: overlay;
+  background-image: radial-gradient(circle, #fff 0 1.2px, transparent 1.8px), radial-gradient(circle, #fff 0 .9px, transparent 1.5px);
+  background-size: 17px 17px, 11px 11px; background-position: 0 0, 5px 7px; }
+.glare { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: overlay;
+  background: radial-gradient(farthest-corner circle at calc(var(--px, .5) * 100%) calc(var(--py, .3) * 100%),
+    #ffffffbb 0%, #ffffff33 22%, #00000022 90%); }
+.card.shiny .glare { background: radial-gradient(farthest-corner circle at calc(var(--px, .5) * 100%) calc(var(--py, .3) * 100%),
+    #ffffffee 0%, #ffffff55 20%, #00000033 90%); }
+/* Glows live on the outer .card, never on .card-tilt / .card-flip: a CSS filter on a preserve-3d element
+   flattens the 3D (Firefox follows the spec strictly), which hid the face-down gift card's back. */
+.card.gift-ready { animation: giftglow 1.4s ease-in-out infinite; }
+@keyframes giftglow { 0%,100% { filter: drop-shadow(0 0 10px #ffd34fbb) drop-shadow(0 0 24px #ff6fc855); }
+  50% { filter: drop-shadow(0 0 22px #ffd34f) drop-shadow(0 0 46px #ff6fc8aa); } }
+.card.charging .card-tilt { animation: chargeBig 1.25s linear forwards; }
+.card.charging { animation: chargeglow 1.25s ease-in forwards; }
+@keyframes chargeBig {
+  0% { transform: none; } 8% { transform: translateX(-3px) rotate(-2deg); } 16% { transform: translateX(3px) rotate(2deg); }
+  24% { transform: translateX(-4px) rotate(-3deg); } 32% { transform: translateX(5px) rotate(3.5deg); }
+  40% { transform: translateX(-6px) rotate(-4.5deg); } 48% { transform: translateX(7px) rotate(5deg); }
+  56% { transform: translateX(-8px) rotate(-6deg) scale(1.02); } 62% { transform: translateX(9px) rotate(6.5deg) scale(1.03); }
+  68% { transform: translateX(-10px) rotate(-7deg) scale(1.04); } 74% { transform: translateX(10px) rotate(7deg) scale(1.05); }
+  80% { transform: translateX(-8px) rotate(-5deg) scale(1.06); } 87% { transform: none; scale: .92; } 100% { transform: none; scale: 1.08; } }
+@keyframes chargeglow { 0% { filter: drop-shadow(0 0 18px #ffd34f); } 100% { filter: drop-shadow(0 0 40px #fff) brightness(1.3); } }
+.rays { position: absolute; left: 50%; top: 50%; width: 260vmax; height: 260vmax; margin: -130vmax 0 0 -130vmax; pointer-events: none;
+  opacity: 0; transition: opacity 1s; z-index: -1;
+  background: repeating-conic-gradient(from 0deg, #ffffff00 0deg 9deg, #fff4c860 9deg 18deg);
+  -webkit-mask: radial-gradient(closest-side, #000 0%, transparent 60%); mask: radial-gradient(closest-side, #000 0%, transparent 60%);
+  animation: spin 30s linear infinite; }
+.rays.on { opacity: 1; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.banner { position: absolute; top: max(64px, 8vh); left: 0; right: 0; text-align: center; font-weight: 700; font-size: clamp(30px, 8vw, 54px);
+  color: #fff; text-shadow: 0 3px 0 #ff5c93, 0 6px 22px #ff5c9380; opacity: 0; transform: scale(.6); pointer-events: none;
+  transition: opacity .5s, transform .6s cubic-bezier(.3,1.6,.5,1); z-index: 20; }
+.banner.on { opacity: 1; transform: scale(1); }
+.counter { position: absolute; bottom: max(26px, 4vh); left: 0; right: 0; text-align: center; font-weight: 600; color: #4a4560;
+  opacity: 0; transition: opacity .4s; }
+.counter.on { opacity: 1; }
+.counter b { display: inline-block; background: #fff; border-radius: 999px; padding: 4px 14px; margin-bottom: 8px; box-shadow: 0 2px 10px #0001; }
+
+/* ---------- summary ---------- */
+#summary { justify-content: flex-start; overflow-y: auto; touch-action: pan-y; padding: 80px 16px 120px; }
+#summary h2 { margin: 0 0 4px; font-size: 28px; color: #fff; text-shadow: 0 2px 12px #0004; text-shadow: 0 2px 12px color-mix(in srgb, var(--c1) 70%, transparent); }
+#summary p { margin: 0 0 18px; color: #fff; opacity: .9; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(140px, 28vw), 1fr)); gap: 14px; width: min(860px, 100%); }
+.grid .thumb { position: relative; aspect-ratio: 5 / 7; cursor: pointer; transition: transform .2s; animation: pop .5s backwards; }
+.grid .thumb:hover { transform: translateY(-4px) scale(1.03); }
+@keyframes pop { from { opacity: 0; transform: translateY(20px) scale(.9); } }
+.grid .card { position: absolute; inset: 0; }
+.summary-actions { position: fixed; bottom: 0; left: 0; right: 0; display: flex; gap: 12px; justify-content: center; padding: 16px 16px max(18px, 3vh);
+  background: linear-gradient(transparent, #ffffffee 40%); }
+.zoom { position: fixed; inset: 0; background: #14102acc; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); z-index: 60; display: grid; place-items: center;
+  opacity: 0; pointer-events: none; transition: opacity .3s; }
+.zoom.on { opacity: 1; pointer-events: auto; }
+.zoom .zc { position: relative; width: min(82vw, 62vh * .714); aspect-ratio: 5 / 7; }
+
+.ring { position: fixed; border-radius: 50%; pointer-events: none; z-index: 30; border: 3px solid #fff;
+  box-shadow: 0 0 28px #fff, inset 0 0 28px #ffffffaa; }
+.land-glow { position: absolute; left: -45%; right: -45%; top: -25%; bottom: -25%; pointer-events: none; opacity: 0;
+  background: radial-gradient(closest-side, #ffffffee, #ffffff66 45%, transparent 75%); }
+#fx { position: fixed; inset: 0; pointer-events: none; z-index: 80; }
+
+/* ---------- intro / title screen ---------- */
+#intro { position: fixed; inset: 0; z-index: 70; cursor: pointer; }
+.ih-wrap { position: absolute; inset: 0; pointer-events: none; }
+#intro.opening .ih-wrap { filter: drop-shadow(0 0 14px #ffffffcc); }
+.ih { position: absolute; inset: 0;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg stroke='%23ffffff' stroke-opacity='.09' stroke-width='4.5' stroke-linecap='round' fill='none'%3E%3Cg transform='translate(30 46) rotate(-18)'%3E%3Cpath d='M0 0v-14M0 0l-12-8M0 0l12-8M0 0v6'/%3E%3C/g%3E%3Cg transform='translate(86 100) rotate(22)'%3E%3Cpath d='M0 0v-14M0 0l-12-8M0 0l12-8M0 0v6'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(90% 60% at 50% 38%, #9d7bff 0%, transparent 70%),
+    linear-gradient(165deg, #2a1666 0%, #5b3fd6 45%, #b04fd0 85%, #ff7ac6 120%); }
+.intro-content { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px; text-align: center; color: #fff; }
+.spark { position: absolute; color: #fff; pointer-events: none; animation: twinkle 2.4s ease-in-out infinite; text-shadow: 0 0 10px #fff; }
+@keyframes twinkle { 0%,100% { opacity: .15; transform: scale(.6) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(20deg); } }
+.fan { position: relative; height: min(34vh, 300px); width: min(80vw, 420px); margin-bottom: 6px; }
+.fan::before { content: ''; position: absolute; left: 50%; top: 50%; width: 140%; height: 120%; transform: translate(-50%, -50%);
+  background: radial-gradient(closest-side, #ffffff66, transparent 70%); }
+.fan-pack { position: absolute; left: 50%; bottom: 0; height: 100%; aspect-ratio: 600 / 1040; transform-origin: 50% 100%;
+  filter: drop-shadow(0 16px 22px #0006); }
+.fan-pack img { width: 100%; height: 100%; display: block; animation: fanbob 3.4s ease-in-out infinite; }
+@keyframes fanbob { 50% { transform: translateY(-9px); } }
+.wordmark { margin: 10px 0 0; font-weight: 700; font-size: clamp(40px, 11.5vw, 88px); line-height: 1; letter-spacing: 2px; color: #fff;
+  text-shadow: 3px 0 0 #ff4f9a, -3px 0 0 #ff4f9a, 0 3px 0 #ff4f9a, 0 -3px 0 #ff4f9a, 2px 2px 0 #ff4f9a, -2px -2px 0 #ff4f9a,
+    2px -2px 0 #ff4f9a, -2px 2px 0 #ff4f9a, 0 8px 0 #c2185b, 0 12px 26px #0007; }
+.tcg-pill { margin-top: 14px; background: #ff4f9a; border-radius: 999px; padding: 4px 16px; font-weight: 600; font-size: 13px; letter-spacing: 3px; }
+.ribbon { margin-top: 18px; position: relative; background: #ffd34f; color: #5a2a00; font-weight: 700; font-size: clamp(16px, 4.4vw, 22px);
+  padding: 8px 34px; clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 50%, 100% 100%, 0 100%, 14px 50%); box-shadow: 0 6px 0 #c99a00; }
+.play { margin-top: 30px; animation: playpulse 1.6s ease-in-out infinite; }
+@keyframes playpulse { 50% { transform: scale(1.06); box-shadow: 0 6px 0 #2fb898, 0 0 34px #8ff5d8aa; } }
+.sound-note { margin-top: 18px; font-size: 13px; opacity: .75; }
+.empty { max-width: 360px; text-align: center; background: #fff; padding: 22px; border-radius: 16px; box-shadow: 0 10px 30px #0002; }
+code { background: #f0eef7; padding: 2px 6px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<div id="intro" role="button" aria-label="Start">
+  <div class="ih-wrap"><div class="ih" id="ihTop"></div></div>
+  <div class="ih-wrap"><div class="ih" id="ihBot"></div></div>
+  <div class="intro-content" id="introContent">
+    <div class="fan" id="fan"></div>
+    <h1 class="wordmark" id="introTitle">BIRDESTRIANS</h1>
+    <div class="tcg-pill">TRADING CARD GAME</div>
+    <div class="ribbon" id="introSub"></div>
+    <button class="btn play" id="playBtn">Tap to play</button>
+    <div class="sound-note">🔊 Best with sound on</div>
+  </div>
+</div>
+<div class="topbar"><div class="brand" id="brand">BIRDESTRIANS</div><button class="icon-btn" id="mute" aria-label="Toggle sound">🔊</button></div>
+
+<section class="screen active" id="carousel">
+  <div class="carousel-title" id="ctitle"></div>
+  <div class="carousel-stage" id="stage"></div>
+  <div class="bottom-row">
+    <div class="carousel-name" id="cname"></div>
+    <div style="height:14px"></div>
+    <button class="btn" id="openBtn">Open</button>
+    <div class="dots" id="dots"></div>
+  </div>
+</section>
+
+<section class="screen" id="opening">
+  <div class="rays" id="rays"></div>
+  <div class="banner" id="banner"></div>
+  <div class="open-wrap" id="openWrap"></div>
+  <div class="hint" id="hint"></div>
+  <div class="counter" id="counter"></div>
+  <button class="btn ghost back-btn" id="backBtn">‹ Packs</button>
+</section>
+
+<section class="screen" id="summary">
+  <h2>Your pack</h2>
+  <p id="sumsub"></p>
+  <div class="grid" id="grid"></div>
+  <div class="summary-actions">
+    <button class="btn ghost" id="replayBtn">Watch again</button>
+    <button class="btn" id="againBtn" style="padding:12px 30px;font-size:17px">Open another pack</button>
+  </div>
+</section>
+
+<div class="zoom" id="zoom"><div class="zc" id="zc"></div></div>
+<canvas id="fx"></canvas>
+
+<!-- Load settings and the card list fresh every visit, so phones never use a stale cached copy
+     (GitHub Pages lets browsers cache these for ~10 minutes). -->
+<script>
+  (function () { var v = Date.now();
+    document.write('<script src="config.js?v=' + v + '"><\/script><script src="cards/cards.js?v=' + v + '"><\/script>'); })();
+</script>
+<script>
+(() => {
+'use strict';
+// ======================================================================= setup
+const CFG = Object.assign({ title: 'Birdestrians', message: '', giftMessage: 'Happy Birthday!', packs: [],
+  packAspect: 600 / 1040, tearLine: 0.158 }, window.BIRDESTRIANS_CONFIG || {});
+if (!CFG.packs.length) CFG.packs = [{ name: 'Booster Pack', image: '', colors: ['#5b3fd6', '#c9b8ff'] }];
+const CARDS = (window.BIRDESTRIANS_CARDS || []).slice().sort((a, b) => (a.gift ? 1 : 0) - (b.gift ? 1 : 0));
+const $ = s => document.querySelector(s);
+const root = document.documentElement;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const now = () => performance.now();
+let PW = 300, PH = 520, state = 'intro';
+
+function measure() {
+  const vw = innerWidth, vh = innerHeight;
+  PH = Math.min(vh * 0.56, 620); PW = PH * CFG.packAspect;
+  if (PW > vw * 0.6) { PW = vw * 0.6; PH = PW / CFG.packAspect; }
+  root.style.setProperty('--pw', PW + 'px'); root.style.setProperty('--ph', PH + 'px');
+}
+measure();
+$('#brand').textContent = (CFG.title || 'Birdestrians').toUpperCase();
+$('#ctitle').textContent = CFG.message || '';
+CARDS.forEach(c => { const i = new Image(); i.src = c.file; });
+
+// ======================================================================= sound
+const Sound = {
+  ctx: null, muted: false, noise: null, tear: null,
+  init() {
+    if (this.ctx) { if (this.ctx.state !== 'running') this.resumeCtx(); return; }
+    try {
+      // Safari 16.4+: play like a media app, so sound works even with the iPhone's silent switch on
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const len = this.ctx.sampleRate * 2, buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      this.noise = buf;
+      this.master = this.ctx.createGain(); this.master.gain.value = 0.9; this.master.connect(this.ctx.destination);
+    } catch (e) { this.ctx = null; }
+  },
+  ok() { return this.ctx && !this.muted; },
+  resumeCtx() { try { const r = this.ctx.resume(); if (r && r.catch) r.catch(() => {}); } catch (e) {} },
+  // Phones only allow audio to start inside a finished tap (touchend / pointerup / click), not on
+  // touch-down, so we (re)unlock on those events and play a silent sample to wake the audio output.
+  unlock() {
+    this.init(); if (!this.ctx) return;
+    if (this.ctx.state !== 'running') this.resumeCtx();
+    if (!this.unlocked) { try { const b = this.ctx.createBuffer(1, 1, 22050), s = this.ctx.createBufferSource();
+      s.buffer = b; s.connect(this.ctx.destination); s.start(0); this.unlocked = true; } catch (e) {} }
+  },
+  // carousel: a card-flick "thwip" each time a pack passes the centre
+  // carousel: a soft rounded "tok" (pure tones, no noise) each time a pack passes the centre, like a dial
+  shuffle(speed = 0.5) {
+    const v = clamp(0.6 + speed * 0.2, 0.6, 1);
+    this.tone(720, 0, 0.1, 0.045 * v, 'sine', 680);
+    this.tone(1440, 0, 0.05, 0.01 * v, 'sine');
+  },
+  src() { const s = this.ctx.createBufferSource(); s.buffer = this.noise; s.loop = true; return s; },
+  env(g, t, a, peak, d) { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); },
+  tearStart() {
+    if (!this.ok() || this.tear) return;
+    const c = this.ctx, s = this.src(), f = c.createBiquadFilter(), h = c.createBiquadFilter(), g = c.createGain();
+    f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = 0.7; h.type = 'highpass'; h.frequency.value = 700; g.gain.value = 0;
+    s.connect(f); f.connect(h); h.connect(g); g.connect(this.master); s.start(0, Math.random());
+    this.tear = { s, f, g };
+  },
+  tearUpdate(speed) {
+    if (!this.tear) return;
+    const t = this.ctx.currentTime, v = clamp(speed * 0.55, 0, 0.75) * (0.35 + Math.random() * 0.9);
+    this.tear.g.gain.setTargetAtTime(v, t, 0.015);
+    this.tear.f.frequency.setTargetAtTime(1600 + Math.random() * 3200, t, 0.01);
+  },
+  tearStop() {
+    if (!this.tear) return; const { s, g } = this.tear, t = this.ctx.currentTime;
+    g.gain.setTargetAtTime(0, t, 0.03); s.stop(t + 0.2); this.tear = null;
+  },
+  noiseHit(type, f0, f1, dur, peak, q = 1) {
+    if (!this.ok()) return; const c = this.ctx, t = c.currentTime, s = this.src(), f = c.createBiquadFilter(), g = c.createGain();
+    f.type = type; f.Q.value = q; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    this.env(g, t, 0.01, peak, dur); s.connect(f); f.connect(g); g.connect(this.master); s.start(t, Math.random()); s.stop(t + dur + 0.05);
+  },
+  tone(freq, t0, dur, peak, type = 'sine', f1) {
+    if (!this.ok()) return; const c = this.ctx, t = c.currentTime + t0, o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    this.env(g, t, 0.01, peak, dur); o.connect(g); g.connect(this.master); o.start(t); o.stop(t + dur + 0.05);
+  },
+  pop() { this.noiseHit('lowpass', 5000, 300, 0.35, 0.6); this.tone(150, 0, 0.25, 0.35, 'sine', 50); },
+  whoosh() { this.noiseHit('bandpass', 500, 2600, 0.28, 0.35, 0.8); },
+  slide() { this.noiseHit('lowpass', 900, 2200, 0.5, 0.18); },
+  tick() { this.tone(1400, 0, 0.04, 0.06, 'triangle'); },
+  charge(d = 0.75) { this.tone(260, 0, d, 0.12, 'sawtooth', 880); this.noiseHit('bandpass', 400, 4000, d, 0.1, 2); },
+  flip() { this.noiseHit('bandpass', 1500, 650, 0.12, 0.09, 0.9); },
+  ting() { this.tone(1568, 0, 0.5, 0.045); this.tone(2093, 0.07, 0.6, 0.035); },
+  chimeSoft() { [784, 988, 1175, 1568].forEach((f, i) => this.tone(f, i * 0.07, 0.6, 0.05)); },
+  chime() { [1046.5, 1318.5, 1568, 2093, 2637].forEach((f, i) => { this.tone(f, i * 0.08, 0.9, 0.16); this.tone(f * 2, i * 0.08, 0.4, 0.04); }); },
+};
+$('#mute').addEventListener('click', () => {
+  Sound.muted = !Sound.muted; $('#mute').textContent = Sound.muted ? '🔇' : '🔊'; if (Sound.muted) Sound.tearStop();
+});
+['touchend', 'pointerup', 'click', 'keydown'].forEach(ev => addEventListener(ev, () => Sound.unlock(), { passive: true, capture: true }));
+const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
+
+// ======================================================================= particles
+const fx = {
+  c: $('#fx'), ctx: null, parts: [], running: false,
+  resize() { const d = Math.min(devicePixelRatio || 1, 2); this.c.width = innerWidth * d; this.c.height = innerHeight * d;
+    this.c.style.width = innerWidth + 'px'; this.c.style.height = innerHeight + 'px'; this.ctx = this.c.getContext('2d'); this.ctx.setTransform(d, 0, 0, d, 0, 0); },
+  spark(x, y, n, dir = 0) {
+    for (let i = 0; i < n; i++) this.parts.push({ k: 's', x, y, vx: (Math.random() - .5) * 3 + dir * (1 + Math.random() * 2), vy: -Math.random() * 3 - .3,
+      g: .12, life: 1, dec: .025 + Math.random() * .035, r: .8 + Math.random() * 2, h: 40 + Math.random() * 25 });
+    this.run();
+  },
+  burst(x, y, n = 40) {
+    for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, v = 2 + Math.random() * 6;
+      this.parts.push({ k: 's', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1, g: .1, life: 1, dec: .015 + Math.random() * .02, r: 1 + Math.random() * 2.5, h: 30 + Math.random() * 40 }); }
+    this.run();
+  },
+  confetti(x, y, n = 160) {
+    const cols = ['#ff5c93', '#ffd34f', '#4fe0bd', '#5cc7ff', '#b98bff', '#ffffff', '#ff9f43'];
+    for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + (Math.random() - .5) * 2.4, v = 6 + Math.random() * 12;
+      this.parts.push({ k: 'c', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: .28, life: 1, dec: .004 + Math.random() * .004,
+        w: 6 + Math.random() * 7, hh: 3 + Math.random() * 5, rot: Math.random() * 6, vr: (Math.random() - .5) * .4, col: cols[i % cols.length], sw: Math.random() * 6 }); }
+    this.run();
+  },
+  run() { if (!this.running) { this.running = true; requestAnimationFrame(t => this.loop(t)); } },
+  loop(t) {
+    const ctx = this.ctx; ctx.clearRect(0, 0, innerWidth, innerHeight);
+    this.parts = this.parts.filter(p => p.life > 0 && p.y < innerHeight + 40);
+    for (const p of this.parts) {
+      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.life -= p.dec;
+      if (p.k === 's') {
+        p.vx *= .97; ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = `hsla(${p.h},100%,75%,${p.life * .35})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 3, 0, 7); ctx.fill();
+        ctx.fillStyle = `hsla(${p.h},100%,92%,${p.life})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill();
+      } else {
+        p.vx *= .985; p.vy *= .985; p.rot += p.vr; ctx.globalCompositeOperation = 'source-over';
+        ctx.save(); ctx.translate(p.x + Math.sin(t / 200 + p.sw) * 2, p.y); ctx.rotate(p.rot); ctx.scale(1, Math.cos(t / 150 + p.sw));
+        ctx.globalAlpha = clamp(p.life * 2, 0, 1); ctx.fillStyle = p.col; ctx.fillRect(-p.w / 2, -p.hh / 2, p.w, p.hh); ctx.restore();
+      }
+    }
+    ctx.globalAlpha = 1;
+    if (this.parts.length) requestAnimationFrame(tt => this.loop(tt)); else { this.running = false; ctx.clearRect(0, 0, innerWidth, innerHeight); }
+  },
+};
+fx.resize();
+
+// ======================================================================= shared art
+const BACK_SVG = `<svg viewBox="0 0 750 1050" xmlns="http://www.w3.org/2000/svg"><defs>
+<linearGradient id="bkg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a1f8a"/><stop offset=".5" stop-color="#6a3fe0"/><stop offset="1" stop-color="#2a1666"/></linearGradient>
+<pattern id="bkp" width="90" height="90" patternUnits="userSpaceOnUse" patternTransform="rotate(-20)"><g stroke="#ffffff22" stroke-width="7" stroke-linecap="round" fill="none"><path d="M20 40 v-16 M20 40 l-11 -10 M20 40 l11 -10"/><path d="M65 85 v-16 M65 85 l-11 -10 M65 85 l11 -10"/></g></pattern>
+<radialGradient id="bkc" cx=".5" cy=".4" r=".6"><stop offset="0" stop-color="#ffe58a"/><stop offset="1" stop-color="#ff9f43"/></radialGradient></defs>
+<rect width="750" height="1050" rx="40" fill="#ffd34f"/><rect x="26" y="26" width="698" height="998" rx="24" fill="url(#bkg)"/>
+<rect x="26" y="26" width="698" height="998" rx="24" fill="url(#bkp)"/>
+<circle cx="375" cy="500" r="190" fill="#ffffff18"/><circle cx="375" cy="500" r="150" fill="url(#bkc)" stroke="#fff" stroke-width="10"/>
+<g transform="translate(375 505) scale(1.1) translate(-100 -110)"><path d="M46 104 L6 86 L18 112 L2 128 L46 134 Z" fill="#3a1f8a"/><ellipse cx="100" cy="110" rx="62" ry="58" fill="#3a1f8a"/>
+<circle cx="124" cy="86" r="11" fill="#fff"/><path d="M154 88 L186 99 L154 110 Z" fill="#3a1f8a"/>
+<g stroke="#3a1f8a" stroke-width="8" stroke-linecap="round" fill="none"><path d="M88 158 L80 188 M80 188 L66 190 M80 188 L86 198"/><path d="M114 158 L128 184 M128 184 L142 184 M128 184 L136 194"/></g></g>
+<text x="375" y="800" text-anchor="middle" font-family="Fredoka,Arial Rounded MT Bold,Arial,sans-serif" font-weight="700" font-size="60" fill="#fff" letter-spacing="4">BIRDESTRIANS</text></svg>`;
+
+function packArt(p) {
+  if (p.image) return `<img class="pack-art" src="${p.image}" alt="" draggable="false">`;
+  return `<div class="pack-art" style="background:linear-gradient(${p.colors[0]},${p.colors[1]});border-radius:6px"></div>`;
+}
+
+let uid = 0;
+function buildCard(c, facedown) {
+  const back = BACK_SVG.replace(/bk([gpc])/g, 'bk$1' + (++uid));
+  const el = document.createElement('div');
+  const shiny = c.holo || c.gift;
+  el.className = 'card' + (facedown ? ' facedown' : '') + (shiny ? ' shiny' : '');
+  el.innerHTML = `<div class="card-tilt"><div class="card-flip"><div class="face front"><img src="${c.file}" alt="" draggable="false">${shiny ? '<div class="holo-hue"></div><div class="holo"></div>' : ''}<div class="glare"></div></div><div class="face back">${back}</div></div></div>`;
+  return el;
+}
+function setCardLight(el, px, py, tiltAmt = 1) {
+  el.style.setProperty('--px', px.toFixed(3)); el.style.setProperty('--py', py.toFixed(3));
+  el.style.setProperty('--ry', ((px - .5) * 22 * tiltAmt).toFixed(2) + 'deg');
+  el.style.setProperty('--rx', ((.5 - py) * 18 * tiltAmt).toFixed(2) + 'deg');
+}
+
+// ======================================================================= carousel
+const stage = $('#stage');
+let carouselSpeed = 0.5;
+let cpos = 0, cAnim = null, chosen = 0;
+const N = CFG.packs.length;
+const cEls = CFG.packs.map((p, i) => {
+  const el = document.createElement('div'); el.className = 'cpack'; el.dataset.i = i;
+  el.innerHTML = `<div class="float">${packArt(p)}<div class="shine"></div></div>`;
+  stage.appendChild(el); return el;
+});
+const dots = $('#dots');
+CFG.packs.forEach(() => dots.appendChild(document.createElement('span')));
+if (N < 2) dots.style.display = 'none';
+
+function wrapRel(r) { if (N <= 2) return r; while (r > N / 2) r -= N; while (r < -N / 2) r += N; return r; }
+function layoutCarousel() {
+  const step = PW * 0.8;
+  cEls.forEach((el, i) => {
+    const r = wrapRel(i - cpos), a = Math.abs(r);
+    const x = r * step, z = -a * 240, ry = clamp(-r * 32, -50, 50);
+    el.style.transform = `translate(-50%,-50%) translateX(${x}px) translateZ(${z}px) rotateY(${ry}deg) scale(.92)`;
+    el.style.zIndex = 100 - Math.round(a * 10);
+    el.style.opacity = clamp(1.9 - a, 0, 1);
+    el.style.filter = `brightness(${1 - Math.min(a, 1.5) * 0.12})`;
+    el.classList.toggle('center', a < 0.5);
+    el.style.setProperty('--mx', clamp(0.5 + r * 0.6 + tilt.x * 0.4, 0, 1));
+  });
+  const ci = ((Math.round(cpos) % N) + N) % N;
+  if (ci !== chosen || !$('#cname').textContent) {
+    if (ci !== chosen) { Sound.shuffle(carouselSpeed); buzz(4); }
+    chosen = ci; const p = CFG.packs[ci];
+    $('#cname').textContent = p.name || '';
+    root.style.setProperty('--c1', p.colors?.[0] || '#5b3fd6'); root.style.setProperty('--c2', p.colors?.[1] || '#c9b8ff');
+    [...dots.children].forEach((d, k) => d.classList.toggle('on', k === ci));
+  }
+}
+function animateTo(target, dur = 420) {
+  if (!cdrag) carouselSpeed = Math.min(carouselSpeed, 1);
+  cancelAnimationFrame(cAnim); const from = cpos, t0 = now();
+  const step = () => { const k = clamp((now() - t0) / dur, 0, 1), e = 1 - Math.pow(1 - k, 3);
+    cpos = lerp(from, target, e); layoutCarousel(); cAnim = k < 1 ? requestAnimationFrame(step) : null; };
+  step();
+}
+let cdrag = null;
+const STEP = () => PW * 0.8; // px of drag per pack
+stage.addEventListener('pointerdown', e => {
+  if (state !== 'carousel') return; Sound.init();
+  cancelAnimationFrame(cAnim); cAnim = null;
+  cdrag = { x: e.clientX, pos: cpos, moved: 0, samples: [{ t: now(), x: e.clientX }], sv: 0 };
+  stage.setPointerCapture(e.pointerId);
+});
+stage.addEventListener('pointermove', e => {
+  if (!cdrag) return;
+  const t = now(), dx = e.clientX - cdrag.x; cdrag.moved = Math.max(cdrag.moved, Math.abs(dx));
+  const prev = cdrag.samples[cdrag.samples.length - 1];
+  const inst = Math.abs(e.clientX - prev.x) / Math.max(1, t - prev.t);
+  cdrag.samples.push({ t, x: e.clientX }); while (cdrag.samples.length > 2 && t - cdrag.samples[0].t > 100) cdrag.samples.shift();
+  cdrag.sv = lerp(cdrag.sv, inst, 0.25); carouselSpeed = cdrag.sv;
+  if (N > 1) { cpos = cdrag.pos - dx / STEP(); if (N <= 2) cpos = clamp(cpos, -0.3, N - 0.7); layoutCarousel(); }
+});
+// Release velocity (px/ms) measured over the last ~100ms of the drag, ignoring a finger that paused before lifting.
+function releaseVelocity(d) {
+  const s = d.samples, a = s[0], b = s[s.length - 1];
+  if (now() - b.t > 60 || b.t - a.t < 8) return 0;
+  return (b.x - a.x) / (b.t - a.t);
+}
+// Momentum: after a flick the carousel keeps turning like a wheel, slowing smoothly (exponential
+// friction) and coming to rest exactly on a pack.
+function spin(vPx) {
+  const v0 = clamp(-vPx / STEP(), -0.02, 0.02); // packs per ms
+  if (N <= 2 || Math.abs(v0) < 0.0007) { return animateTo(N <= 2 ? clamp(Math.round(cpos), 0, N - 1) : Math.round(cpos)); }
+  const start = cpos, natural = start + v0 / 0.0028;
+  let target = Math.round(natural);
+  if ((target - start) * Math.sign(v0) < 0.2) target += Math.sign(v0);
+  const A = target - start, k = Math.abs(v0 / A), t0 = now();
+  cancelAnimationFrame(cAnim);
+  const step = () => {
+    const t = now() - t0, rem = Math.exp(-k * t);
+    cpos = start + A * (1 - rem);
+    carouselSpeed = Math.abs(A * k * rem) * STEP();
+    if (Math.abs(A) * rem < 0.003) { cpos = target; layoutCarousel(); cAnim = null; return; }
+    layoutCarousel(); cAnim = requestAnimationFrame(step);
+  };
+  step();
+}
+stage.addEventListener('pointercancel', () => { cdrag = null; animateTo(Math.round(cpos)); });
+stage.addEventListener('pointerup', e => {
+  if (!cdrag) return; const d = cdrag; cdrag = null;
+  if (d.moved < 8) {
+    const hit = document.elementsFromPoint(e.clientX, e.clientY).find(n => n.classList && n.classList.contains('cpack'));
+    if (hit) { const i = +hit.dataset.i, r = wrapRel(i - cpos);
+      if (Math.abs(r) < 0.5) return selectPack(); return animateTo(cpos + r); }
+    return animateTo(Math.round(cpos));
+  }
+  spin(releaseVelocity(d));
+});
+$('#openBtn').addEventListener('click', () => { Sound.init(); selectPack(); });
+addEventListener('keydown', e => {
+  if (state === 'carousel') { if (e.key === 'ArrowRight') animateTo(Math.round(cpos) + 1); if (e.key === 'ArrowLeft') animateTo(Math.round(cpos) - 1);
+    if (e.key === 'Enter') selectPack(); }
+  else if (state === 'cards' && (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter')) tapCard();
+});
+
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id)); }
+
+// ======================================================================= tilt loop
+const tilt = { tx: 0, ty: 0, x: 0, y: 0, last: -1e9, hoverCard: -1e9 };
+addEventListener('pointermove', e => {
+  tilt.tx = (e.clientX / innerWidth - .5) * 2; tilt.ty = (e.clientY / innerHeight - .5) * 2; tilt.last = now();
+});
+function frame(t) {
+  const idle = now() - tilt.last > 2500;
+  let tx = idle ? Math.sin(t / 1500) * .45 : tilt.tx, ty = idle ? Math.cos(t / 2100) * .3 : tilt.ty;
+  if (state === 'tearing' || drag) { tx = 0; ty = 0; }
+  tilt.x = lerp(tilt.x, tx, .07); tilt.y = lerp(tilt.y, ty, .07);
+  if (state === 'carousel' && !cdrag && !cAnim) layoutCarousel();
+  if ((state === 'pack' || state === 'tearing') && P.pack) {
+    P.pack.style.transform = `rotateY(${tilt.x * 12}deg) rotateX(${-tilt.y * 8}deg)`;
+    P.pack.style.setProperty('--mx', (0.5 + tilt.x * 0.45).toFixed(3));
+  }
+  if ((state === 'cards' || state === 'revealing') && !cardDrag && now() - tilt.hoverCard > 1500) {
+    const el = cardEls[cur]; if (el) setCardLight(el, .5 + Math.sin(t / 1300) * .32, .45 + Math.cos(t / 1700) * .25, .6);
+  }
+  if (zoomEl && now() - tilt.hoverCard > 1500) setCardLight(zoomEl, .5 + Math.sin(t / 1300) * .35, .45 + Math.cos(t / 1700) * .3, .7);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ======================================================================= opening
+const P = {}; // current pack screen elements
+let tear = null, drag = null;
+const openWrap = $('#openWrap'), opening = $('#opening'), hint = $('#hint');
+
+// The tear is recorded from the pointer itself: every point the finger/cursor passes
+// (moving forward along the top) becomes part of the cut line, so the rip goes exactly where
+// you drag. Coordinates are stored normalized (0..1) so the tear survives a resize.
+// The cut follows the pointer's up/down movement, exaggerated by GAIN, so even a fairly straight
+// laptop swipe visibly bends the line. It may wander from just under the top crimp to a little
+// way into the art.
+const GAIN = 1.45, UP = 0.08, DOWN = 0.09;
+const clampY = yn => clamp(yn, CFG.tearLine - UP, CFG.tearLine + DOWN);
+const mapY = fy => clampY((CFG.tearLine * PH + (fy - tear.y0) * GAIN) / PH);
+const tearProg = () => { const p = tear.path; if (!tear.dir || !p.length) return 0; const t = p[p.length - 1]; return tear.dir > 0 ? t.x : 1 - t.x; };
+function extendTo(xn, yn) {
+  const path = tear.path, last = path[path.length - 1];
+  const n = Math.max(1, Math.ceil(Math.abs(xn - last.x) * PW / 5)); // a point every ~5px
+  for (let i = 1; i <= n; i++) {
+    const k = i / n; tear.jagN++;
+    // tiny alternating offsets give the cut a torn-foil edge without moving it off the finger
+    const j = ((tear.jagN % 2) ? 1 : -1) * (0.6 + Math.random() * 1.6) / PH;
+    path.push({ x: lerp(last.x, xn, k), y: lerp(last.y, yn, k), j });
+  }
+}
+const px = pts => 'polygon(' + pts.map(([x, y]) => `${(x * PW).toFixed(1)}px ${(y * PH).toFixed(1)}px`).join(',') + ')';
+
+function renderTear() {
+  const path = tear.path, d = tear.dir;
+  if (!d || path.length < 2) {
+    P.flap.style.clipPath = P.flap.style.webkitClipPath = 'polygon(0 0, 0 0, 0 0)';
+    P.body.style.clipPath = P.body.style.webkitClipPath = 'none';
+    P.glow.setAttribute('d', ''); P.core.setAttribute('d', '');
+    return null;
+  }
+  const pts = path.map((p, i) => [p.x, p.y + (i === path.length - 1 ? 0 : p.j)]);
+  const [tx, ty] = pts[pts.length - 1];
+  const s = d > 0 ? 0 : 1, far = d > 0 ? 1.05 : -0.05;
+  const flap = [[s, -0.05], [tx, -0.05], ...pts.slice().reverse()];
+  const body = [[s, 1.05], ...pts, [tx, -0.05], [far, -0.05], [far, 1.05]];
+  P.flap.style.clipPath = P.flap.style.webkitClipPath = px(flap);
+  P.body.style.clipPath = P.body.style.webkitClipPath = px(body);
+  // The torn strip bends up from the tip; pulling the finger above the line lifts it further.
+  const prog = tearProg();
+  const pull = clamp((tear.y0 - tear.fy) / PH * 55, -2, 12);
+  const ang = Math.max(0, 1.5 + prog * 5 + pull);
+  P.flap.style.transformOrigin = `${tx * PW}px ${ty * PH}px`;
+  P.flap.style.transform = `translateY(${-Math.max(0, pull) * 0.3}px) rotate(${-d * ang}deg)`;
+  const dstr = 'M' + pts.map(([x, y]) => `${(x * PW).toFixed(1)} ${(y * PH).toFixed(1)}`).join(' L');
+  P.glow.setAttribute('d', dstr); P.core.setAttribute('d', dstr);
+  P.tip.style.left = tx * PW + 'px'; P.tip.style.top = ty * PH + 'px';
+  return { x: tx * PW, y: ty * PH };
+}
+
+function buildPackScreen(i) {
+  const p = CFG.packs[i];
+  openWrap.innerHTML = `
+    <div class="pack-area" id="packArea">
+      <div class="stack" id="stack"></div>
+      <div class="pack" id="pack">
+        <div class="pack-shadow"></div>
+        <div class="layer" id="body">${packArt(p)}<div class="shine"></div></div>
+        <div class="layer" id="flap">${packArt(p)}<div class="shine"></div></div>
+        <svg class="tearsvg" id="tearsvg">
+          <path id="tglow" stroke="#fff6c8" stroke-width="9" opacity=".55" style="filter:blur(3px)"/>
+          <path id="tcore" stroke="#ffffff" stroke-width="2.6"/>
+        </svg>
+        <div class="guide" id="guide" style="top:${CFG.tearLine * 100}%"></div>
+        <div class="finger" id="finger" style="top:calc(${CFG.tearLine * 100}% - 4px)">👆</div>
+        <div class="tip" id="tip"></div>
+      </div>
+    </div>`;
+  Object.assign(P, { area: $('#packArea'), pack: $('#pack'), body: $('#body'), flap: $('#flap'), glow: $('#tglow'), core: $('#tcore'),
+    tip: $('#tip'), guide: $('#guide'), finger: $('#finger'), stack: $('#stack') });
+  tear = { dir: 0, path: [], jagN: 0, fy: CFG.tearLine * PH, y0: CFG.tearLine * PH, ty: CFG.tearLine, done: false, lastBuzz: 0 };
+  renderTear();
+  hint.textContent = 'Swipe across the top of the pack to open it';
+  hint.style.opacity = 1;
+  $('#counter').classList.remove('on'); $('#banner').classList.remove('on'); $('#rays').classList.remove('on');
+  $('#backBtn').style.display = '';
+  buildStack();
+}
+
+// Switch screens with no cross-fade, so a pack can hand off seamlessly between them.
+function showInstant(id) {
+  const scr = document.querySelectorAll('.screen');
+  scr.forEach(x => x.style.transition = 'none'); show(id); void document.body.offsetWidth;
+  scr.forEach(x => x.style.transition = '');
+}
+const fadeEls = () => [$('#ctitle'), document.querySelector('#carousel .bottom-row')];
+const centreRect = i => cEls[i].getBoundingClientRect();
+function flipFrom(rect, to) {
+  return `translate(${rect.left + rect.width / 2 - (to.left + to.width / 2)}px, ${rect.top + rect.height / 2 - (to.top + to.height / 2)}px) scale(${rect.height / to.height})`;
+}
+
+async function selectPack() {
+  if (state !== 'carousel') return;
+  state = 'selecting';
+  cancelAnimationFrame(cAnim); cAnim = null; cpos = Math.round(cpos); layoutCarousel();
+  const ci = chosen, centre = cEls[ci];
+  // 1. the other packs fly out sideways, the title and buttons fade, the chosen pack dips then pops up
+  cEls.forEach((el, i) => {
+    if (i === ci) return; const r = Math.sign(wrapRel(i - cpos) || 1), base = el.style.transform;
+    el.animate([{ transform: base, opacity: el.style.opacity },
+      { transform: `${base} translateX(${r * PW * 1.4}px) rotateY(${r * 35}deg) scale(.85)`, opacity: 0 }],
+      { duration: 420, easing: 'cubic-bezier(.5,0,.75,.3)', fill: 'forwards' });
+  });
+  fadeEls().forEach(el => el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(18px)' }], { duration: 260, fill: 'forwards' }));
+  centre.style.setProperty('-webkit-box-reflect', 'none');
+  const base = centre.style.transform;
+  const lift = centre.animate([
+    { transform: base },
+    { transform: `${base} translateY(6px) scale(.95)`, offset: 0.28 },
+    { transform: `${base} translateY(-28px) scale(1.14)`, filter: 'brightness(1.25) drop-shadow(0 0 36px #ffffff)' }],
+    { duration: 440, easing: 'cubic-bezier(.3,1.45,.5,1)', fill: 'forwards' });
+  Sound.whoosh();
+  await wait(150);
+  // a burst of light at the moment it pops
+  const c = centreRect(ci), cx = c.left + c.width / 2, cy = c.top + c.height / 2, d = c.height * 0.9;
+  const ring = document.createElement('div'); ring.className = 'ring';
+  Object.assign(ring.style, { left: cx - d / 2 + 'px', top: cy - d / 2 + 'px', width: d + 'px', height: d + 'px' });
+  document.body.appendChild(ring);
+  ring.animate([{ transform: 'scale(.35)', opacity: .95 }, { transform: 'scale(1.9)', opacity: 0 }],
+    { duration: 650, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => ring.remove();
+  fx.burst(cx, cy, 48); buzz(15);
+  await wait(300);
+  const from = centreRect(ci);
+  // 2. hand the pack over to the opening screen; it swoops into place with a turn and settles
+  buildPackScreen(ci);
+  [hint, $('#backBtn')].forEach(el => { el.style.transition = 'none'; el.style.opacity = 0; });
+  showInstant('opening');
+  hint.style.transition = '';
+  if (!CARDS.length) {
+    hint.innerHTML = '<div class="empty">No cards found yet. Add images to the <code>cards</code> folder and run <code>python3 update_cards.py</code>.</div>';
+  }
+  const to = P.area.getBoundingClientRect();
+  const glide = P.area.animate([
+    { transform: flipFrom(from, to), filter: 'brightness(1.25)' },
+    { transform: `translateY(-26px) scale(1.09) rotateY(-18deg)`, filter: 'brightness(1.12)', offset: 0.55 },
+    { transform: `translateY(3px) scale(.985) rotateY(5deg)`, filter: 'brightness(1.03)', offset: 0.82 },
+    { transform: 'none', filter: 'none' }], { duration: 860, easing: 'cubic-bezier(.3,.7,.3,1)' });
+  // a highlight sweeps across the foil as it turns
+  const t0 = now(); const sweep = () => { const k = (now() - t0) / 860; if (k > 1 || !P.pack) return;
+    P.pack.style.setProperty('--mx', (-0.2 + k * 1.4).toFixed(3)); requestAnimationFrame(sweep); }; sweep();
+  await glide.finished.catch(() => {});
+  // a soft glow pulses behind the pack as it lands
+  const glow = document.createElement('div'); glow.className = 'land-glow'; openWrap.prepend(glow);
+  glow.animate([{ opacity: 0 }, { opacity: .85, offset: .3 }, { opacity: 0 }], { duration: 700, easing: 'ease-out' }).onfinish = () => glow.remove();
+  P.area.animate([{ transform: 'none' }, { transform: 'scale(1.02)' }, { transform: 'none' }], { duration: 260, easing: 'ease-out' });
+  // 3. tidy up the carousel behind the scenes and bring in the hint
+  lift.cancel(); centre.style.removeProperty('-webkit-box-reflect');
+  cEls.forEach(el => el.getAnimations().forEach(an => an.cancel()));
+  fadeEls().forEach(el => el.getAnimations().forEach(an => an.cancel()));
+  state = 'pack';
+  hint.style.opacity = 1; $('#backBtn').style.transition = 'opacity .35s'; $('#backBtn').style.opacity = 1;
+}
+
+$('#backBtn').addEventListener('click', async () => {
+  if (state !== 'pack') return;
+  state = 'closing';
+  hint.style.opacity = 0; $('#backBtn').style.opacity = 0;
+  layoutCarousel();
+  const to = P.area.getBoundingClientRect(), target = centreRect(chosen);
+  const shrink = P.area.animate([{ transform: 'none' }, { transform: flipFrom(target, to) }],
+    { duration: 420, easing: 'cubic-bezier(.45,0,.3,1)', fill: 'forwards' });
+  await shrink.finished.catch(() => {});
+  showInstant('carousel');
+  state = 'carousel'; layoutCarousel();
+  // other packs slide back in, title and buttons fade back
+  cEls.forEach((el, i) => {
+    if (i === chosen) return; const r = wrapRel(i - cpos), base = el.style.transform;
+    el.animate([{ transform: `${base} translateX(${Math.sign(r || 1) * PW * 0.9}px)`, opacity: 0 }, { transform: base, opacity: el.style.opacity }],
+      { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)' });
+  });
+  fadeEls().forEach(el => el.animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 350, easing: 'ease-out' }));
+});
+
+function localXY(e) { const r = P.area.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+
+opening.addEventListener('pointerdown', e => {
+  if (state !== 'pack' && state !== 'tearing') return;
+  if (e.target.closest('button') || !CARDS.length) return;
+  Sound.init();
+  const { x, y } = localXY(e), T = CFG.tearLine * PH;
+  const band = Math.max(64, PH * 0.12);
+  if (Math.abs(y - T) > band || x < -70 || x > PW + 70) {
+    hint.classList.remove('nudge'); void hint.offsetWidth; hint.classList.add('nudge'); return;
+  }
+  drag = { sx: x, sy: y, lx: x, lt: now() };
+  // resuming a half-made tear: re-anchor so the cut carries on from its tip with no jump
+  if (tear.dir && tear.path.length) tear.y0 = y - (tear.ty * PH - CFG.tearLine * PH) / GAIN;
+  // stop the idle tilt instantly so the cut lines up exactly under the finger
+  tilt.x = tilt.y = 0; P.pack.style.transform = 'none';
+  opening.setPointerCapture(e.pointerId);
+});
+opening.addEventListener('pointermove', e => {
+  if (!drag || tear.done || state === 'opening') return;
+  const evs = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e];
+  const T = CFG.tearLine * PH, t = now();
+  let advanced = false, lastX = drag.lx;
+  for (const ev of evs) {
+    const { x, y } = localXY(ev);
+    lastX = x;
+    if (!tear.dir) {
+      if (Math.abs(x - drag.sx) < 6) continue;
+      tear.dir = x > drag.sx ? 1 : -1; state = 'tearing';
+      // the cut starts at the pack edge, level with where the finger came in
+      tear.y0 = drag.sy; tear.ty = CFG.tearLine;
+      tear.path = [{ x: tear.dir > 0 ? 0 : 1, y: tear.ty, j: 0 }];
+      P.guide.style.opacity = 0; P.finger.style.opacity = 0; P.finger.style.animation = 'none';
+      hint.style.opacity = 0;
+      Sound.tearStart();
+    }
+    tear.fy = y;
+    const tipX = tear.path[tear.path.length - 1].x, xn = clamp(x / PW, 0, 1);
+    const ahead = tear.dir > 0 ? xn > tipX : xn < tipX;
+    if (ahead && Math.abs(y - tear.y0) < PH * 0.35) { tear.ty = lerp(tear.ty, mapY(y), 0.6); extendTo(xn, tear.ty); advanced = true; }
+  }
+  if (!tear.dir) return;
+  Sound.tearStart();
+  const speed = Math.abs(lastX - drag.lx) / Math.max(1, t - drag.lt);
+  drag.lx = lastX; drag.lt = t;
+  const tip = renderTear();
+  if (advanced && tip) {
+    P.tip.style.opacity = 1;
+    const r = P.area.getBoundingClientRect();
+    fx.spark(r.left + tip.x, r.top + tip.y, 1 + Math.round(speed * 3), -tear.dir * 0.6);
+    Sound.tearUpdate(speed);
+    const b = Math.floor(tearProg() * 16); if (b !== tear.lastBuzz) { tear.lastBuzz = b; buzz(6); }
+    if (tearProg() >= 0.97) finishTear();
+  } else Sound.tearUpdate(0);
+});
+const endDrag = () => {
+  if (!drag) return; drag = null; Sound.tearStop();
+  if (P.tip) P.tip.style.opacity = 0;
+  if (state === 'tearing' && !tear.done) state = 'pack';
+};
+opening.addEventListener('pointerup', endDrag);
+opening.addEventListener('pointercancel', endDrag);
+
+async function finishTear() {
+  if (tear.done) return; tear.done = true; state = 'opening'; drag = null;
+  $('#backBtn').style.display = 'none';
+  // run the cut the rest of the way
+  const last = tear.path[tear.path.length - 1], sx = last.x, ex = tear.dir > 0 ? 1 : 0, t0 = now(), r = P.area.getBoundingClientRect();
+  await new Promise(res => { const step = () => {
+    const k = clamp((now() - t0) / 90, 0, 1); extendTo(lerp(sx, ex, k), last.y); const tip = renderTear();
+    fx.spark(r.left + tip.x, r.top + tip.y, 3, -tear.dir * .6); Sound.tearUpdate(1.2);
+    k < 1 ? requestAnimationFrame(step) : res(); }; step(); });
+  Sound.tearStop(); Sound.pop(); buzz(25);
+  const tip = renderTear();
+  fx.burst(r.left + tip.x, r.top + tip.y, 36);
+  P.tip.style.opacity = 0;
+  P.pack.style.transition = 'transform .3s'; P.pack.style.transform = 'none';
+  // flap flies off
+  const d = tear.dir, base = P.flap.style.transform;
+  P.flap.animate([
+    { transform: base, opacity: 1 },
+    { transform: `${base} translate(${d * 30}px, ${-PH * 0.12}px) rotate(${-d * 18}deg)`, opacity: 1, offset: .3 },
+    { transform: `${base} translate(${d * PW * 0.9}px, ${PH * 0.9}px) rotate(${-d * 80}deg)`, opacity: 0 }],
+    { duration: 1100, easing: 'cubic-bezier(.35,.1,.6,1)', fill: 'forwards' });
+  $('#tearsvg').animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: 'forwards' });
+  P.body.animate([{ transform: 'none' }, { transform: 'translateY(6px) scaleY(.985)' }, { transform: 'none' }], { duration: 300, easing: 'ease-out' });
+  await wait(420);
+  // cards peek out of the pack
+  Sound.slide();
+  P.stack.style.setProperty('--sy', -PH * 0.42 + 'px');
+  await wait(750);
+  // pack drops away
+  P.pack.animate([{ transform: 'none' }, { transform: `translateY(${innerHeight}px) rotate(${d * 4}deg)` }],
+    { duration: 750, easing: 'cubic-bezier(.55,0,.8,.3)', fill: 'forwards' });
+  await wait(200);
+  P.stack.style.setProperty('--sy', -PH * 0.0675 + 'px');
+  P.stack.style.setProperty('--ss', '1.1');
+  await wait(650);
+  P.stack.style.zIndex = 5; P.pack.style.display = 'none';
+  state = 'cards'; updateCounter();
+}
+
+// ======================================================================= card viewer
+// Every card comes out of the pack face-down. Tap (or swipe) the top card to flip it over, then tap or
+// swipe again to send it away and reveal the next face-down card. The gift card shakes before it flips.
+let cardEls = [], cur = 0, cardDrag = null;
+const isDown = el => el.classList.contains('facedown');
+function buildStack() {
+  P.stack.innerHTML = ''; cur = 0;
+  cardEls = CARDS.map(c => { const el = buildCard(c, true); if (c.gift) el.classList.add('is-gift'); if (c.holo || c.gift) el.classList.add('is-holo');
+    P.stack.appendChild(el); return el; });
+  layoutStack();
+}
+function layoutStack() {
+  cardEls.forEach((el, i) => {
+    const k = i - cur;
+    if (k < 0) return; // already-dismissed cards finish their own fly-off animation
+    const kk = Math.min(k, 3); el.style.zIndex = 100 - k;
+    el.style.transform = `translateY(${kk * 9}px) scale(${1 - kk * 0.045})`;
+    el.style.filter = k === 0 ? 'none' : `brightness(${1 - kk * 0.13})`;
+    el.style.opacity = k > 3 ? 0 : 1;
+    el.classList.toggle('gift-ready', k === 0 && el.classList.contains('is-gift') && isDown(el));
+  });
+}
+function updateCounter() {
+  const el = $('#counter'); if (cur >= CARDS.length) { el.classList.remove('on'); return; }
+  const top = cardEls[cur], gift = top.classList.contains('is-gift');
+  const msg = isDown(top) ? (gift ? 'Something special… tap to reveal ✨' : 'Tap to flip')
+    : cur === CARDS.length - 1 ? 'Swipe to see your whole pack' : 'Swipe or tap for the next card';
+  el.innerHTML = `<b>${cur + 1} / ${CARDS.length}</b><br>${msg}`; el.classList.add('on');
+}
+opening.addEventListener('pointerdown', e => {
+  if (state !== 'cards') return; const el = cardEls[cur]; if (!el) return;
+  Sound.init();
+  cardDrag = { x: e.clientX, y: e.clientY, t: now(), lx: e.clientX, lt: now(), v: 0, el };
+  el.style.transition = 'none';
+  opening.setPointerCapture(e.pointerId);
+});
+opening.addEventListener('pointermove', e => {
+  if (state === 'cards' && !cardDrag) {
+    const el = cardEls[cur]; if (!el || isDown(el)) return; const r = el.getBoundingClientRect();
+    const ix = (e.clientX - r.left) / r.width, iy = (e.clientY - r.top) / r.height;
+    if (ix >= 0 && ix <= 1 && iy >= 0 && iy <= 1 && e.pointerType === 'mouse') { tilt.hoverCard = now(); setCardLight(el, ix, iy); }
+    return;
+  }
+  if (!cardDrag) return;
+  const dx = e.clientX - cardDrag.x, dy = e.clientY - cardDrag.y, t = now();
+  cardDrag.v = (e.clientX - cardDrag.lx) / Math.max(1, t - cardDrag.lt); cardDrag.lx = e.clientX; cardDrag.lt = t;
+  const el = cardDrag.el;
+  if (isDown(el)) return; // face-down cards flip rather than drag
+  el.style.transform = `translate(${dx}px, ${dy * 0.3}px) rotate(${dx * 0.05}deg)`;
+  tilt.hoverCard = now();
+  setCardLight(el, clamp(.5 + dx / (PW * 1.4), 0, 1), clamp(.4 + dy / (PH * 1.2), 0, 1), .5);
+});
+const endCard = e => {
+  if (!cardDrag) return; const d = cardDrag; cardDrag = null;
+  const dx = e.clientX - d.x, dy = e.clientY - d.y;
+  d.el.style.transition = '';
+  if (isDown(d.el)) return tapCard(); // a tap or a swipe both flip a face-down card
+  if (Math.hypot(dx, dy) < 8 && now() - d.t < 400) return tapCard();
+  if (Math.abs(dx) > PW * 0.3 || Math.abs(d.v) > 0.55) return fling(Math.sign(dx || d.v));
+  layoutStack();
+};
+opening.addEventListener('pointerup', endCard);
+opening.addEventListener('pointercancel', endCard);
+
+function tapCard() {
+  if (state !== 'cards') return; const el = cardEls[cur]; if (!el) return;
+  if (isDown(el)) return el.classList.contains('is-gift') ? revealGift(el) : flipCard(el);
+  fling(-1);
+}
+// Turn a card over in two halves, swapping faces when it is edge-on, with a small lift and wobble.
+async function flipOver(el, wobble = 10, dur = 560) {
+  const flip = el.querySelector('.card-flip'), base = el.style.transform || 'none';
+  el.animate([{ transform: base }, { transform: `${base} translateY(-16px) scale(1.05)`, offset: 0.4 }, { transform: base }],
+    { duration: 200 + dur, easing: 'cubic-bezier(.3,.7,.4,1)' });
+  const half = flip.animate([{ transform: 'rotateY(180deg)' }, { transform: 'rotateY(90deg)' }],
+    { duration: 190, easing: 'cubic-bezier(.5,0,1,1)', fill: 'forwards' });
+  await half.finished.catch(() => {});
+  el.classList.remove('facedown');
+  flip.animate([{ transform: 'rotateY(90deg)' }, { transform: `rotateY(${-wobble}deg)`, offset: 0.55 },
+    { transform: `rotateY(${wobble * 0.3}deg)`, offset: 0.8 }, { transform: 'rotateY(0deg)' }], { duration: dur, easing: 'cubic-bezier(0,0,.4,1)' });
+  half.cancel();
+}
+async function flipCard(el) {
+  state = 'flipping'; Sound.flip(); buzz(6);
+  await flipOver(el);
+  if (el.classList.contains('is-holo')) {
+    const r = el.getBoundingClientRect(); fx.burst(r.left + r.width / 2, r.top + r.height / 2, 30); Sound.ting();
+  }
+  await wait(120);
+  state = 'cards'; updateCounter();
+}
+function fling(dir) {
+  const el = cardEls[cur]; if (!el) return;
+  if (isDown(el)) { layoutStack(); return tapCard(); }
+  Sound.whoosh();
+  const from = getComputedStyle(el).transform, W = innerWidth;
+  el.style.transition = 'none'; el.style.zIndex = 200; el.classList.remove('arrive');
+  const anim = el.animate([
+    { transform: from === 'none' ? 'translate(0,0)' : from, opacity: 1 },
+    { transform: `translate(${dir * W * 0.22}px, -26px) rotate(${dir * 7}deg) scale(1.02)`, opacity: 1, offset: 0.3 },
+    { transform: `translate(${dir * W * 1.05}px, 50px) rotate(${dir * 26}deg) scale(.96)`, opacity: 0 }
+  ], { duration: 560, easing: 'cubic-bezier(.35,.05,.45,1)', fill: 'forwards' });
+  anim.onfinish = () => { el.style.display = 'none'; };
+  cur++;
+  setTimeout(() => {
+    layoutStack();
+    const next = cardEls[cur];
+    if (next) { next.classList.remove('arrive'); void next.offsetWidth; next.classList.add('arrive'); }
+    updateCounter();
+    const c = $('#counter'); c.classList.add('bump'); setTimeout(() => c.classList.remove('bump'), 220);
+  }, 110);
+  if (cur >= cardEls.length) setTimeout(showSummary, 650);
+}
+async function revealGift(el) {
+  state = 'revealing'; updateCounterText('');
+  el.classList.remove('gift-ready'); el.classList.add('charging');
+  Sound.charge(1.25); buzz([15, 50, 15, 50, 20, 40, 30, 30, 40]);
+  // sparks crackle off the card while it shakes, faster as it builds
+  const r0 = el.getBoundingClientRect(), t0 = now();
+  const crackle = setInterval(() => { const k = (now() - t0) / 1250;
+    fx.spark(r0.left + Math.random() * r0.width, r0.top + Math.random() * r0.height, 1 + Math.round(k * 4), 0); }, 70);
+  await wait(1250);
+  clearInterval(crackle);
+  el.classList.remove('charging');
+  await flipOver(el, 14, 700);
+  $('#rays').classList.add('on');
+  await wait(140);
+  const r = el.getBoundingClientRect();
+  fx.confetti(r.left + r.width / 2, r.top + r.height * 0.35, 180);
+  fx.burst(r.left + r.width / 2, r.top + r.height / 2, 50);
+  Sound.chime(); buzz(40);
+  const b = $('#banner'); b.textContent = CFG.giftMessage || ''; b.classList.add('on');
+  await wait(900);
+  state = 'cards'; updateCounter();
+}
+function updateCounterText(t) { $('#counter').classList.toggle('on', !!t); }
+
+// ======================================================================= summary
+let zoomEl = null;
+function showSummary() {
+  state = 'summary';
+  const g = $('#grid'); g.innerHTML = '';
+  $('#sumsub').textContent = `${CARDS.length} card${CARDS.length === 1 ? '' : 's'} · tap one to take a closer look`;
+  CARDS.forEach((c, i) => {
+    const th = document.createElement('div'); th.className = 'thumb'; th.style.animationDelay = i * 60 + 'ms';
+    const el = buildCard(c, false); th.appendChild(el); g.appendChild(th);
+    th.addEventListener('pointermove', e => { const r = th.getBoundingClientRect();
+      setCardLight(el, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height, .8); });
+    th.addEventListener('pointerleave', () => setCardLight(el, .5, .4, 0));
+    th.addEventListener('click', () => openZoom(c));
+  });
+  $('#banner').classList.remove('on'); $('#rays').classList.remove('on');
+  show('summary'); $('#summary').scrollTop = 0;
+}
+function openZoom(c) {
+  const zc = $('#zc'); zc.innerHTML = ''; zoomEl = buildCard(c, false); zc.appendChild(zoomEl);
+  $('#zoom').classList.add('on'); Sound.whoosh();
+}
+$('#zoom').addEventListener('pointermove', e => {
+  if (!zoomEl) return; const r = zoomEl.getBoundingClientRect(); tilt.hoverCard = now();
+  setCardLight(zoomEl, clamp((e.clientX - r.left) / r.width, 0, 1), clamp((e.clientY - r.top) / r.height, 0, 1));
+});
+$('#zoom').addEventListener('click', () => { $('#zoom').classList.remove('on'); zoomEl = null; });
+$('#againBtn').addEventListener('click', () => { state = 'carousel'; show('carousel'); layoutCarousel(); });
+$('#replayBtn').addEventListener('click', () => {
+  state = 'carousel'; show('carousel'); setTimeout(selectPack, 350);
+});
+
+// ======================================================================= misc
+addEventListener('resize', () => {
+  measure(); fx.resize(); layoutCarousel();
+  if (tear && P.flap && !tear.done) renderTear();
+});
+layoutCarousel();
+
+// ======================================================================= intro
+(function setupIntro() {
+  $('#introTitle').textContent = (CFG.introTitle || CFG.title || 'Birdestrians').toUpperCase();
+  const sub = CFG.introSubtitle; if (sub) $('#introSub').textContent = sub; else $('#introSub').remove();
+  const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  $('#playBtn').textContent = CFG.introButton || (fine ? 'Click to play' : 'Tap to play');
+  // a fan of the packs behind the title
+  const fan = $('#fan'), packs = CFG.packs.slice(0, 3), mid = (packs.length - 1) / 2;
+  packs.forEach((p, i) => {
+    const d = i - mid, el = document.createElement('div'); el.className = 'fan-pack';
+    el.style.transform = `translateX(calc(-50% + ${d * 62}%)) rotate(${d * 15}deg) ${d ? 'scale(.9)' : ''}`;
+    el.style.zIndex = 10 - Math.abs(d);
+    el.innerHTML = packArt(p).replace('class="pack-art"', 'style="width:100%;height:100%"');
+    const img = el.firstElementChild; if (img) img.style.animationDelay = (i * 0.4) + 's';
+    fan.appendChild(el);
+  });
+  // twinkling sparkles
+  const ic = $('#introContent');
+  for (let i = 0; i < 16; i++) {
+    const sp = document.createElement('span'); sp.className = 'spark'; sp.textContent = i % 3 ? '✦' : '✧';
+    Object.assign(sp.style, { left: Math.random() * 96 + '%', top: Math.random() * 96 + '%', fontSize: 10 + Math.random() * 18 + 'px',
+      animationDelay: (Math.random() * 2.4).toFixed(2) + 's' });
+    ic.prepend(sp);
+  }
+  // the two halves meet along a torn zigzag edge, so the screen "rips open" like a pack
+  function zig() {
+    const n = Math.max(12, Math.round(innerWidth / 22)), top = [], bot = [];
+    for (let i = 0; i <= n; i++) { const x = (i / n * 100).toFixed(2) + '%', o = i % 2 ? 7 : -7;
+      top.push(`${x} calc(50% + ${o + 2}px)`); bot.push(`${x} calc(50% + ${o}px)`); } // halves overlap 2px: no hairline seam
+    $('#ihTop').style.clipPath = `polygon(0 0, 100% 0, ${top.reverse().join(', ')})`;
+    $('#ihBot').style.clipPath = `polygon(${bot.join(', ')}, 100% 100%, 0 100%)`;
+  }
+  zig(); addEventListener('resize', () => { if ($('#intro')) zig(); });
+  const go = () => startIntro();
+  $('#intro').addEventListener('click', go);
+  addEventListener('keydown', e => { if (state === 'intro' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); go(); } });
+})();
+
+async function startIntro() {
+  if (state !== 'intro') return; state = 'intro-out';
+  Sound.unlock(); Sound.chimeSoft(); buzz(15);
+  const ic = $('#introContent');
+  // the fan of packs spreads, the title swells and fades, light bursts from the centre
+  [...$('#fan').children].forEach((el, i, all) => {
+    const d = i - (all.length - 1) / 2;
+    el.animate([{ transform: el.style.transform }, { transform: `${el.style.transform} translate(${d * 40}px, -30px) rotate(${d * 8}deg) scale(1.1)` }],
+      { duration: 450, easing: 'cubic-bezier(.3,1.4,.5,1)', fill: 'forwards' });
+  });
+  ic.animate([{ transform: 'none', opacity: 1 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.5 }, { transform: 'scale(1.14)', opacity: 0 }],
+    { duration: 520, easing: 'ease-in', fill: 'forwards' });
+  const cx = innerWidth / 2, cy = innerHeight / 2, d = Math.min(innerWidth, innerHeight) * 0.7;
+  const ring = document.createElement('div'); ring.className = 'ring'; ring.style.zIndex = 75;
+  Object.assign(ring.style, { left: cx - d / 2 + 'px', top: cy - d / 2 + 'px', width: d + 'px', height: d + 'px' });
+  document.body.appendChild(ring);
+  ring.animate([{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(2.2)', opacity: 0 }], { duration: 700, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => ring.remove();
+  fx.burst(cx, cy, 60);
+  await wait(380);
+  // the screen tears open: top half up, bottom half down
+  $('#intro').classList.add('opening');
+  Sound.whoosh();
+  const ease = 'cubic-bezier(.6,0,.25,1)';
+  $('#ihTop').animate([{ transform: 'none' }, { transform: 'translateY(-58%) rotate(-3deg)' }], { duration: 1200, easing: ease, fill: 'forwards' });
+  $('#ihBot').animate([{ transform: 'none' }, { transform: 'translateY(58%) rotate(2deg)' }], { duration: 1200, easing: ease, fill: 'forwards' });
+  await wait(470);
+  // packs rise into the carousel one after another, then the title and buttons
+  layoutCarousel();
+  cEls.forEach(el => {
+    const base = el.style.transform, r = Math.abs(wrapRel(+el.dataset.i - cpos));
+    el.animate([{ transform: `${base} translateY(55vh) scale(.6) rotate(${(+el.dataset.i % 2 ? 1 : -1) * 12}deg)`, opacity: 0 },
+      { transform: base, opacity: el.style.opacity }],
+      { duration: 800, delay: 60 + r * 110, easing: 'cubic-bezier(.2,.9,.3,1.12)', fill: 'backwards' });
+  });
+  fadeEls().forEach(el => el.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }],
+    { duration: 500, delay: 380, easing: 'ease-out', fill: 'backwards' }));
+  await wait(800);
+  $('#intro').remove();
+  state = 'carousel';
+}
+// Read-only debug hook used for automated testing.
+window.__bird = { get state() { return state; }, get tear() { return tear; } };
+})();
+</script>
+</body>
+</html>
