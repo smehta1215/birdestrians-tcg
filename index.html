@@ -120,6 +120,9 @@ img { -webkit-user-drag: none; }
 .holo { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color-dodge; opacity: .36; filter: saturate(1.6);
   background: repeating-linear-gradient(115deg, #ff6fc8 0%, #ffd36e 7%, #6dffc4 14%, #5cc7ff 21%, #b98bff 28%, #ff6fc8 35%);
   background-size: 400% 400%; background-position: calc(var(--px, .5) * 100%) calc(var(--py, .5) * 100%); }
+.holo-hue { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color; opacity: .42;
+  background: repeating-linear-gradient(115deg, #ff3fa4 0%, #ffb02e 6%, #f9f53b 10%, #2fe88a 15%, #22b8ff 21%, #7a5cff 27%, #ff3fa4 33%);
+  background-size: 400% 400%; background-position: calc(var(--px, .5) * 130%) calc(var(--py, .5) * 100%); }
 .holo::before { content: ''; position: absolute; inset: 0; mix-blend-mode: soft-light; opacity: .9;
   background: repeating-linear-gradient(65deg, #ffffff00 0%, #ffffff88 3%, #ffffff00 6%, #ffffff00 11%);
   background-size: 300% 300%; background-position: calc(var(--px, .5) * -150%) calc(var(--py, .5) * 100%); }
@@ -431,7 +434,7 @@ function buildCard(c, facedown) {
   const el = document.createElement('div');
   const shiny = c.holo || c.gift;
   el.className = 'card' + (facedown ? ' facedown' : '') + (shiny ? ' shiny' : '');
-  el.innerHTML = `<div class="card-tilt"><div class="card-flip"><div class="face front"><img src="${c.file}" alt="" draggable="false">${shiny ? '<div class="holo"></div>' : ''}<div class="glare"></div></div><div class="face back">${back}</div></div></div>`;
+  el.innerHTML = `<div class="card-tilt"><div class="card-flip"><div class="face front"><img src="${c.file}" alt="" draggable="false">${shiny ? '<div class="holo-hue"></div><div class="holo"></div>' : ''}<div class="glare"></div></div><div class="face back">${back}</div></div></div>`;
   return el;
 }
 function setCardLight(el, px, py, tiltAmt = 1) {
