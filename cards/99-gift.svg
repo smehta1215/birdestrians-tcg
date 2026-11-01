@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1050" width="750" height="1050">
+<defs>
+ <linearGradient id="fr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd1e8"/><stop offset=".5" stop-color="#ffe58a"/><stop offset="1" stop-color="#ff9ccc"/></linearGradient>
+ <linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe3f1"/><stop offset="1" stop-color="#fff7da"/></linearGradient>
+ <radialGradient id="sky" cx=".5" cy=".45" r=".75"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#ffc2df"/></radialGradient>
+</defs>
+<rect width="750" height="1050" rx="40" fill="url(#fr)"/>
+<rect x="26" y="26" width="698" height="998" rx="24" fill="url(#body)"/>
+<text x="375" y="100" text-anchor="middle" font-family="'Arial Rounded MT Bold','Trebuchet MS',Verdana,Arial,sans-serif" font-size="50" font-weight="900" fill="#c2185b">A Special Delivery</text>
+<rect x="56" y="128" width="638" height="520" rx="14" fill="url(#sky)" stroke="#f5b6d3" stroke-width="10"/>
+<g transform="translate(375 470)">
+ <rect x="-150" y="-60" width="300" height="190" rx="10" fill="#ff5c93"/>
+ <rect x="-170" y="-100" width="340" height="60" rx="10" fill="#ff7aa8"/>
+ <rect x="-22" y="-100" width="44" height="230" fill="#ffd23f"/>
+ <path d="M0 -100 C -80 -180, -150 -120, -60 -102 Z M0 -100 C 80 -180, 150 -120, 60 -102 Z" fill="#ffd23f" stroke="#e0b100" stroke-width="4"/>
+</g>
+<g transform="translate(470 300) scale(1.1) translate(-100 -110)"><g stroke="#ff9f1c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M88 158 L80 188 M80 188 L66 190 M80 188 L86 198 M80 188 L72 198"/><path d="M114 158 L128 184 M128 184 L142 184 M128 184 L136 194 M128 184 L124 196"/></g><path d="M46 104 L6 86 L18 112 L2 128 L46 134 Z" fill="#6c7487"/><ellipse cx="100" cy="110" rx="62" ry="58" fill="#9aa3b5"/><ellipse cx="114" cy="128" rx="40" ry="35" fill="#d7dbe6"/><path d="M60 106 C 68 80, 106 86, 106 116 C 100 142, 72 142, 56 128 Z" fill="#6c7487"/><path d="M70 112 C 78 108, 90 110, 96 118" stroke="#00000022" stroke-width="3" fill="none"/><circle cx="124" cy="86" r="13" fill="#fff"/><circle cx="128" cy="87" r="7.5" fill="#1d1d2b"/><circle cx="130.5" cy="84" r="2.6" fill="#fff"/><ellipse cx="138" cy="106" rx="9" ry="5.5" fill="#ff7aa2" opacity=".55"/><path d="M154 88 L186 99 L154 110 Z" fill="#ff9f1c" stroke="#00000030" stroke-width="2" stroke-linejoin="round"/><path d="M100 50 L76 34 L78 66 Z" fill="#ff4f79"/><path d="M100 50 L124 34 L122 66 Z" fill="#ff4f79"/><circle cx="100" cy="50" r="8" fill="#fff" opacity=".85"/></g>
+<text x="375" y="730" text-anchor="middle" font-family="'Arial Rounded MT Bold','Trebuchet MS',Verdana,Arial,sans-serif" font-size="44" font-weight="900" fill="#1d1d2b">Your gift goes here!</text>
+<text x="375" y="790" text-anchor="middle" font-family="'Arial Rounded MT Bold','Trebuchet MS',Verdana,Arial,sans-serif" font-size="26" fill="#3a3a4a">Replace this placeholder with a card</text>
+<text x="375" y="826" text-anchor="middle" font-family="'Arial Rounded MT Bold','Trebuchet MS',Verdana,Arial,sans-serif" font-size="26" fill="#3a3a4a">that shows off the real present.</text>
+<text x="375" y="1000" text-anchor="middle" font-family="'Arial Rounded MT Bold','Trebuchet MS',Verdana,Arial,sans-serif" font-size="20" font-weight="700" fill="#c2185b" letter-spacing="3">SAMPLE GIFT CARD · ★★★</text>
+</svg>
