@@ -7,8 +7,15 @@ A pack-opening animation you can play in the browser: pick a pack from the carou
 - **On a phone, or for sharing:** host the whole folder on any static host (GitHub Pages, Netlify Drop, etc.) and open the link.
 - **Local server:** `python3 -m http.server` in this folder, then open http://localhost:8000.
 
+## Making cards (Card Maker)
+Open **cardmaker.html** (on the live site: `https://smehta1215.github.io/birdestrians-tcg/cardmaker.html`).
+It makes cards in the same style as the samples. You can change every piece of text, the colours (presets or custom) and the border (gold, silver, rose or custom), and drop in your own picture, then drag or zoom to position it. There's also a gift-card layout.
+- **Download PNG** gives a 1250 × 1750 image with the right file name (e.g. `03-aida-holo.png`), ready for the `cards/` folder.
+- **SVG for Figma** gives a vector file you can open in Figma to fine-tune by hand.
+- Cards save automatically in your browser. Use **Backup all** to move them to another computer.
+
 ## Adding your cards
-1. Make each card at **750 × 1050 px** (5:7, the standard trading-card ratio). PNG or JPG, with square corners; the app rounds them.
+1. Make each card at **1250 × 1750 px** (any 5:7 size works, minimum 750 × 1050). PNG or JPG, with square corners; the app rounds them.
 2. Delete the sample cards from `cards/` and drop yours in.
 3. Name the files so they sort in the order you want:
    - `01-name.png`, `02-name.png`, … are shown in that order.
