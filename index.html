@@ -262,7 +262,7 @@ code { background: #f0eef7; padding: 2px 6px; border-radius: 6px; }
 </section>
 
 <section class="screen" id="summary">
-  <h2>Your pack</h2>
+  <h2 id="sumtitle">Your pack</h2>
   <p id="sumsub"></p>
   <div class="grid" id="grid"></div>
   <div class="summary-actions">
@@ -300,6 +300,27 @@ function cardsForPack(i) {
     ? ALL_CARDS.filter(c => c.gift && num(c) === String(p.gift).padStart(2, '0')) : ALL_CARDS.filter(c => c.gift);
   return list.concat(gifts.filter(g => !list.includes(g)));
 }
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const cardNum = c => (c.file.split('/').pop().match(/^(\d+)/) || [])[1];
+// With `friends` in config.js, every page load deals each friend's cards randomly across the packs, one
+// per pack, then orders each pack from fewest to most stars (ties in random order). Gift cards go last.
+function dealPacks() {
+  const P = CFG.packs.length;
+  if (!CFG.friends) return CFG.packs.map((_, i) => cardsForPack(i));
+  const byId = id => ALL_CARDS.find(c => cardNum(c) === String(id).padStart(2, '0'));
+  const stars = c => (CFG.stars && CFG.stars[cardNum(c)]) || (c.holo ? 3 : 1);
+  const packs = CFG.packs.map(() => []);
+  Object.values(CFG.friends).forEach(ids => shuffle(ids.map(byId).filter(Boolean)).forEach((c, k) => packs[k % P].push(c)));
+  return packs.map((list, i) => {
+    list = shuffle(list).sort((a, b) => stars(a) - stars(b));
+    const p = CFG.packs[i] || {};
+    if (p.gift === false) return list;
+    const gifts = (typeof p.gift === 'string' || typeof p.gift === 'number')
+      ? ALL_CARDS.filter(c => c.gift && cardNum(c) === String(p.gift).padStart(2, '0')) : ALL_CARDS.filter(c => c.gift);
+    return list.concat(gifts);
+  });
+}
+const DEALT = dealPacks();
 let CARDS = ALL_CARDS;
 const $ = s => document.querySelector(s);
 const root = document.documentElement;
@@ -476,22 +497,30 @@ function setCardLight(el, px, py, tiltAmt = 1) {
 // ======================================================================= carousel
 const stage = $('#stage');
 let carouselSpeed = 0.5;
-let cpos = 0, cAnim = null, chosen = 0;
-const N = CFG.packs.length;
+let cpos = 0, cAnim = null, chosen = 0, currentPack = 0;
+let avail = CFG.packs.map((_, i) => i); // packs still unopened, in carousel order
+let N = avail.length;
+const slot = i => avail.indexOf(i);
 const cEls = CFG.packs.map((p, i) => {
   const el = document.createElement('div'); el.className = 'cpack'; el.dataset.i = i;
   el.innerHTML = `<div class="float">${packArt(p)}<div class="shine"></div></div>`;
   stage.appendChild(el); return el;
 });
 const dots = $('#dots');
-CFG.packs.forEach(() => dots.appendChild(document.createElement('span')));
-if (N < 2) dots.style.display = 'none';
+function buildDots() { dots.innerHTML = ''; avail.forEach(() => dots.appendChild(document.createElement('span'))); dots.style.display = N < 2 ? 'none' : ''; }
+buildDots();
+function packsLeftTitle() {
+  const left = avail.length;
+  $('#ctitle').textContent = left === CFG.packs.length ? (CFG.message || '') : left === 1 ? 'Last pack!' : `${left} packs left`;
+}
 
 function wrapRel(r) { if (N <= 2) return r; while (r > N / 2) r -= N; while (r < -N / 2) r += N; return r; }
 function layoutCarousel() {
   const step = PW * 0.8;
   cEls.forEach((el, i) => {
-    const r = wrapRel(i - cpos), a = Math.abs(r);
+    if (slot(i) < 0) { el.style.display = 'none'; return; }
+    el.style.display = '';
+    const r = wrapRel(slot(i) - cpos), a = Math.abs(r);
     const x = r * step, z = -a * 240, ry = clamp(-r * 32, -50, 50);
     el.style.transform = `translate(-50%,-50%) translateX(${x}px) translateZ(${z}px) rotateY(${ry}deg) scale(.92)`;
     el.style.zIndex = 100 - Math.round(a * 10);
@@ -500,13 +529,14 @@ function layoutCarousel() {
     el.classList.toggle('center', a < 0.5);
     el.style.setProperty('--mx', clamp(0.5 + r * 0.6 + tilt.x * 0.4, 0, 1));
   });
-  const ci = ((Math.round(cpos) % N) + N) % N;
+  if (!N) return;
+  const ci = avail[((Math.round(cpos) % N) + N) % N];
   if (ci !== chosen || !$('#cname').textContent) {
-    if (ci !== chosen) { Sound.shuffle(carouselSpeed); buzz(4); }
+    if (ci !== chosen && chosen >= 0) { Sound.shuffle(carouselSpeed); buzz(4); }
     chosen = ci; const p = CFG.packs[ci];
     $('#cname').textContent = p.name || '';
     root.style.setProperty('--c1', p.colors?.[0] || '#5b3fd6'); root.style.setProperty('--c2', p.colors?.[1] || '#c9b8ff');
-    [...dots.children].forEach((d, k) => d.classList.toggle('on', k === ci));
+    [...dots.children].forEach((d, k) => d.classList.toggle('on', avail[k] === ci));
   }
 }
 function animateTo(target, dur = 420) {
@@ -563,7 +593,7 @@ stage.addEventListener('pointerup', e => {
   if (!cdrag) return; const d = cdrag; cdrag = null;
   if (d.moved < 8) {
     const hit = document.elementsFromPoint(e.clientX, e.clientY).find(n => n.classList && n.classList.contains('cpack'));
-    if (hit) { const i = +hit.dataset.i, r = wrapRel(i - cpos);
+    if (hit) { const i = +hit.dataset.i, r = wrapRel(slot(i) - cpos);
       if (Math.abs(r) < 0.5) return selectPack(); return animateTo(cpos + r); }
     return animateTo(Math.round(cpos));
   }
@@ -656,7 +686,7 @@ function renderTear() {
 }
 
 function buildPackScreen(i) {
-  CARDS = cardsForPack(i);
+  CARDS = DEALT[i]; currentPack = i;
   const p = CFG.packs[i];
   openWrap.innerHTML = `
     <div class="pack-area" id="packArea">
@@ -704,7 +734,7 @@ async function selectPack() {
   const ci = chosen, centre = cEls[ci];
   // 1. the other packs fly out sideways, the title and buttons fade, the chosen pack dips then pops up
   cEls.forEach((el, i) => {
-    if (i === ci) return; const r = Math.sign(wrapRel(i - cpos) || 1), base = el.style.transform;
+    if (i === ci || slot(i) < 0) return; const r = Math.sign(wrapRel(slot(i) - cpos) || 1), base = el.style.transform;
     el.animate([{ transform: base, opacity: el.style.opacity },
       { transform: `${base} translateX(${r * PW * 1.4}px) rotateY(${r * 35}deg) scale(.85)`, opacity: 0 }],
       { duration: 420, easing: 'cubic-bezier(.5,0,.75,.3)', fill: 'forwards' });
@@ -772,7 +802,7 @@ $('#backBtn').addEventListener('click', async () => {
   state = 'carousel'; layoutCarousel();
   // other packs slide back in, title and buttons fade back
   cEls.forEach((el, i) => {
-    if (i === chosen) return; const r = wrapRel(i - cpos), base = el.style.transform;
+    if (i === chosen || slot(i) < 0) return; const r = wrapRel(slot(i) - cpos), base = el.style.transform;
     el.animate([{ transform: `${base} translateX(${Math.sign(r || 1) * PW * 0.9}px)`, opacity: 0 }, { transform: base, opacity: el.style.opacity }],
       { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)' });
   });
@@ -1020,11 +1050,18 @@ function updateCounterText(t) { $('#counter').classList.toggle('on', !!t); }
 
 // ======================================================================= summary
 let zoomEl = null;
-function showSummary() {
-  state = 'summary';
+let collection = false;
+function showSummary(all = false) {
+  state = 'summary'; collection = all;
+  const list = all ? DEALT.flat() : CARDS;
   const g = $('#grid'); g.innerHTML = '';
-  $('#sumsub').textContent = `${CARDS.length} card${CARDS.length === 1 ? '' : 's'} · tap one to take a closer look`;
-  CARDS.forEach((c, i) => {
+  $('#sumtitle').textContent = all ? 'Your collection' : 'Your pack';
+  $('#sumsub').textContent = all ? `Every pack opened · all ${list.length} cards · tap one to take a closer look`
+    : `${list.length} card${list.length === 1 ? '' : 's'} · tap one to take a closer look`;
+  const lastPack = avail.length === 1 && avail[0] === currentPack;
+  $('#againBtn').textContent = all ? 'Start over' : lastPack ? 'See all your cards' : 'Open another pack';
+  $('#replayBtn').style.display = all ? 'none' : '';
+  list.forEach((c, i) => {
     const th = document.createElement('div'); th.className = 'thumb'; th.style.animationDelay = i * 60 + 'ms';
     const el = buildCard(c, false); th.appendChild(el); g.appendChild(th);
     th.addEventListener('pointermove', e => { const r = th.getBoundingClientRect();
@@ -1044,7 +1081,14 @@ $('#zoom').addEventListener('pointermove', e => {
   setCardLight(zoomEl, clamp((e.clientX - r.left) / r.width, 0, 1), clamp((e.clientY - r.top) / r.height, 0, 1));
 });
 $('#zoom').addEventListener('click', () => { $('#zoom').classList.remove('on'); zoomEl = null; });
-$('#againBtn').addEventListener('click', () => { state = 'carousel'; show('carousel'); layoutCarousel(); });
+$('#againBtn').addEventListener('click', () => {
+  if (collection) { location.reload(); return; }
+  // the pack just opened leaves the carousel (it comes back when the page is refreshed)
+  avail = avail.filter(i => i !== currentPack); N = avail.length;
+  if (!N) { showSummary(true); return; }
+  cpos = 0; chosen = -1; $('#cname').textContent = ''; buildDots(); packsLeftTitle();
+  state = 'carousel'; show('carousel'); layoutCarousel();
+});
 $('#replayBtn').addEventListener('click', () => {
   state = 'carousel'; show('carousel'); setTimeout(selectPack, 350);
 });
