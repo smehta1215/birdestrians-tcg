@@ -24,7 +24,7 @@ window.BIRDESTRIANS_CONFIG = {
 
   // Each friend's cards (card numbers = the start of the file names in cards/). Every time the page
   // loads, each friend's cards are dealt randomly across the packs, one per pack, so every pack gets
-  // one card from each friend. Add a new friend's cards here and every pack gets one more card.
+  // one card from each friend, in a random order. Add a new friend's cards here and every pack gets one more card.
   friends: {
     Abhi:    ["01", "02", "03"],
     Sunay:   ["04", "05", "06"],
@@ -32,8 +32,9 @@ window.BIRDESTRIANS_CONFIG = {
     Sachin:  ["10", "11", "12"]
   },
 
-  // Stars on each card. Each pack reveals its cards from fewest to most stars.
-  stars: { "01": 2, "02": 1, "03": 3, "04": 3, "05": 3, "06": 3, "07": 1, "08": 1, "09": 1, "10": 2, "11": 1, "12": 1 },
+  // Each visit, one random card in every pack becomes the holo card and is revealed last.
+  // Set to false to use "holo" in file names instead.
+  randomHolo: true,
 
   // Width / height of the pack art. 600 x 1040 => 0.577
   packAspect: 600 / 1040,

@@ -11,23 +11,23 @@ window.BIRDESTRIANS_CARDS = [
     "gift": false
   },
   {
-    "file": "cards/03-cowgirl-aida-holo.webp",
-    "holo": true,
+    "file": "cards/03-cowgirl-aida.webp",
+    "holo": false,
     "gift": false
   },
   {
-    "file": "cards/04-ai-da-holo.webp",
-    "holo": true,
+    "file": "cards/04-ai-da.webp",
+    "holo": false,
     "gift": false
   },
   {
-    "file": "cards/05-scissorheart-holo.webp",
-    "holo": true,
+    "file": "cards/05-scissorheart.webp",
+    "holo": false,
     "gift": false
   },
   {
-    "file": "cards/06-delu-lu-holo.webp",
-    "holo": true,
+    "file": "cards/06-delu-lu.webp",
+    "holo": false,
     "gift": false
   },
   {

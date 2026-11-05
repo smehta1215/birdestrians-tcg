@@ -303,16 +303,22 @@ function cardsForPack(i) {
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const cardNum = c => (c.file.split('/').pop().match(/^(\d+)/) || [])[1];
 // With `friends` in config.js, every page load deals each friend's cards randomly across the packs, one
-// per pack, then orders each pack from fewest to most stars (ties in random order). Gift cards go last.
+// per pack, and shuffles the order inside each pack, so the friends come up in a different order each time.
+// With `randomHolo`, one random card in each pack becomes the holo card and is saved for last.
+// Gift cards always go at the very end.
 function dealPacks() {
   const P = CFG.packs.length;
   if (!CFG.friends) return CFG.packs.map((_, i) => cardsForPack(i));
   const byId = id => ALL_CARDS.find(c => cardNum(c) === String(id).padStart(2, '0'));
-  const stars = c => (CFG.stars && CFG.stars[cardNum(c)]) || (c.holo ? 3 : 1);
   const packs = CFG.packs.map(() => []);
   Object.values(CFG.friends).forEach(ids => shuffle(ids.map(byId).filter(Boolean)).forEach((c, k) => packs[k % P].push(c)));
   return packs.map((list, i) => {
-    list = shuffle(list).sort((a, b) => stars(a) - stars(b));
+    list = shuffle(list.map(c => ({ ...c })));
+    if (CFG.randomHolo && list.length) {
+      list.forEach(c => { c.holo = false; });
+      const h = list.splice(Math.floor(Math.random() * list.length), 1)[0];
+      h.holo = true; list.push(h);
+    }
     const p = CFG.packs[i] || {};
     if (p.gift === false) return list;
     const gifts = (typeof p.gift === 'string' || typeof p.gift === 'number')
@@ -1179,7 +1185,7 @@ async function startIntro() {
   state = 'carousel';
 }
 // Read-only debug hook used for automated testing.
-window.__bird = { get state() { return state; }, get tear() { return tear; } };
+window.__bird = { get state() { return state; }, get tear() { return tear; }, deal: () => DEALT.map(p => p.map(c => cardNum(c) + (c.holo ? '*' : ''))) };
 })();
 </script>
 </body>
