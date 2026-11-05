@@ -12,14 +12,14 @@ window.BIRDESTRIANS_CONFIG = {
   giftMessage: "Happy Birthday!",
 
   // One entry per pack in the carousel.
-  // image:  wrapper art (recommended 600 x 1040 px, portrait)
+  // image:  wrapper art (600 x 1040 px shape; the art is drawn by tools/make_packs.js at 2x)
   // colors: [dark, light] used for the screen background behind the pack
   // gift:   gift cards (with "gift" in the file name) are added at the end of every pack.
   //         Set gift: "13" to use one specific gift card for this pack, or gift: false for none.
   packs: [
-    { name: "Morning Chorus", image: "packs/pack-1.svg", colors: ["#5b3fd6", "#c9b8ff"] },
-    { name: "Night Owls",     image: "packs/pack-2.svg", colors: ["#1f3a9e", "#a8c4ff"] },
-    { name: "Seaside Strut",  image: "packs/pack-3.svg", colors: ["#13827c", "#b5f5ea"] }
+    { name: "Celebrations: 29th Birthday Edition", image: "packs/pack-celebrations.webp",     colors: ["#8a5a1c", "#ffe3a0"] },
+    { name: "Violet & Yellow: Coalescence",        image: "packs/pack-coalescence.webp",      colors: ["#5b2a9e", "#dcc4ff"] },
+    { name: "Evolving Memories",                   image: "packs/pack-evolving-memories.webp", colors: ["#2e7a33", "#c4ecbf"] }
   ],
 
   // Each friend's cards (card numbers = the start of the file names in cards/). Every time the page
