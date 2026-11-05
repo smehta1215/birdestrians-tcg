@@ -462,6 +462,14 @@ $('#mute').addEventListener('click', () => {
 // Safari can suspend or "interrupt" audio when the tab is hidden; try again when it comes back.
 document.addEventListener('visibilitychange', () => { if (!document.hidden && Sound.ctx && Sound.ctx.state !== 'running') Sound.resumeCtx(); });
 
+// ---- Stop iPhone double-tap and pinch zoom (Safari ignores user-scalable=no) ----
+// Only the two standard guards; nothing here changes the viewport or scrolls the page.
+// A second tap within 300ms: cancel the browser's double-tap default (the app's taps use pointer events, so they still work).
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e => { const t = Date.now(); if (t - lastTouchEnd < 300 && e.cancelable) e.preventDefault(); lastTouchEnd = t; }, { passive: false });
+// Pinch: Safari's gesture events.
+document.addEventListener('gesturestart', e => e.preventDefault(), { passive: false });
+
 const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
 
 // ======================================================================= particles
