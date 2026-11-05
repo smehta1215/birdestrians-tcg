@@ -126,6 +126,9 @@ img { -webkit-user-drag: none; }
 .holo-hue { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color; opacity: .42;
   background: repeating-linear-gradient(115deg, #ff3fa4 0%, #ffb02e 6%, #f9f53b 10%, #2fe88a 15%, #22b8ff 21%, #7a5cff 27%, #ff3fa4 33%);
   background-size: 400% 400%; background-position: calc(var(--px, .5) * 130%) calc(var(--py, .5) * 100%); }
+.holo, .holo-hue { /* full rainbow on the frame and text, only a light sheen over the picture so photos keep their colours */
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 750 1050' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' fill='white' d='M0 0H750V1050H0Z M56 124H694V556H56Z'/%3E%3Crect x='56' y='124' width='638' height='432' fill='white' fill-opacity='.22'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 750 1050' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' fill='white' d='M0 0H750V1050H0Z M56 124H694V556H56Z'/%3E%3Crect x='56' y='124' width='638' height='432' fill='white' fill-opacity='.22'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
 .holo::before { content: ''; position: absolute; inset: 0; mix-blend-mode: soft-light; opacity: .9;
   background: repeating-linear-gradient(65deg, #ffffff00 0%, #ffffff88 3%, #ffffff00 6%, #ffffff00 11%);
   background-size: 300% 300%; background-position: calc(var(--px, .5) * -150%) calc(var(--py, .5) * 100%); }
@@ -284,7 +287,20 @@ code { background: #f0eef7; padding: 2px 6px; border-radius: 6px; }
 const CFG = Object.assign({ title: 'Birdestrians', message: '', giftMessage: 'Happy Birthday!', packs: [],
   packAspect: 600 / 1040, tearLine: 0.158 }, window.BIRDESTRIANS_CONFIG || {});
 if (!CFG.packs.length) CFG.packs = [{ name: 'Booster Pack', image: '', colors: ['#5b3fd6', '#c9b8ff'] }];
-const CARDS = (window.BIRDESTRIANS_CARDS || []).slice().sort((a, b) => (a.gift ? 1 : 0) - (b.gift ? 1 : 0));
+const ALL_CARDS = (window.BIRDESTRIANS_CARDS || []).slice().sort((a, b) => (a.gift ? 1 : 0) - (b.gift ? 1 : 0));
+// Which cards are in a pack. A pack's `cards` lists card numbers (the start of the file name, e.g. "08") in
+// the order they're revealed. Gift cards are added at the end of every pack, unless the pack's `gift`
+// names a specific one (e.g. "13") or is false. A pack with no `cards` list contains every card.
+function cardsForPack(i) {
+  const p = CFG.packs[i] || {}, num = c => (c.file.split('/').pop().match(/^(\d+)/) || [])[1];
+  if (!Array.isArray(p.cards)) return ALL_CARDS;
+  const list = p.cards.map(id => ALL_CARDS.find(c => num(c) === String(id).padStart(2, '0') || num(c) === String(id))).filter(Boolean);
+  if (p.gift === false) return list;
+  const gifts = typeof p.gift === 'string' || typeof p.gift === 'number'
+    ? ALL_CARDS.filter(c => c.gift && num(c) === String(p.gift).padStart(2, '0')) : ALL_CARDS.filter(c => c.gift);
+  return list.concat(gifts.filter(g => !list.includes(g)));
+}
+let CARDS = ALL_CARDS;
 const $ = s => document.querySelector(s);
 const root = document.documentElement;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -302,7 +318,7 @@ function measure() {
 measure();
 $('#brand').textContent = (CFG.title || 'Birdestrians').toUpperCase();
 $('#ctitle').textContent = CFG.message || '';
-CARDS.forEach(c => { const i = new Image(); i.src = c.file; });
+ALL_CARDS.forEach(c => { const i = new Image(); i.src = c.file; });
 
 // ======================================================================= sound
 const Sound = {
@@ -640,6 +656,7 @@ function renderTear() {
 }
 
 function buildPackScreen(i) {
+  CARDS = cardsForPack(i);
   const p = CFG.packs[i];
   openWrap.innerHTML = `
     <div class="pack-area" id="packArea">
