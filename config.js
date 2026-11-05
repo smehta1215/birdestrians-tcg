@@ -14,8 +14,9 @@ window.BIRDESTRIANS_CONFIG = {
   // One entry per pack in the carousel.
   // image:  wrapper art (600 x 1040 px shape; the art is drawn by tools/make_packs.js at 2x)
   // colors: [dark, light] used for the screen background behind the pack
-  // gift:   gift cards (with "gift" in the file name) are added at the end of every pack.
-  //         Set gift: "13" to use one specific gift card for this pack, or gift: false for none.
+  // Gift cards: any card with "gift" in its file name (91-gift-..., 92-gift-..., 93-gift-...). They are revealed
+  // in number order across the session: the 1st pack opened ends with the first gift, the 2nd with the
+  // second, and so on, whichever pack she picks. Gift cards are always holo.
   packs: [
     { name: "Celebrations: 29th Birthday Edition", image: "packs/pack-celebrations.webp",     colors: ["#8a5a1c", "#ffe3a0"] },
     { name: "Violet & Yellow: Coalescence",        image: "packs/pack-coalescence.webp",      colors: ["#5b2a9e", "#dcc4ff"] },

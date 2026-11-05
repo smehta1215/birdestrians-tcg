@@ -318,7 +318,6 @@ const cardNum = c => (c.file.split('/').pop().match(/^(\d+)/) || [])[1];
 // With `friends` in config.js, every page load deals each friend's cards randomly across the packs, one
 // per pack, and shuffles the order inside each pack, so the friends come up in a different order each time.
 // With `randomHolo`, one random card in each pack becomes the holo card and is saved for last.
-// Gift cards always go at the very end.
 function dealPacks() {
   const P = CFG.packs.length;
   if (!CFG.friends) return CFG.packs.map((_, i) => cardsForPack(i));
@@ -332,13 +331,12 @@ function dealPacks() {
       const h = list.splice(Math.floor(Math.random() * list.length), 1)[0];
       h.holo = true; list.push(h);
     }
-    const p = CFG.packs[i] || {};
-    if (p.gift === false) return list;
-    const gifts = (typeof p.gift === 'string' || typeof p.gift === 'number')
-      ? ALL_CARDS.filter(c => c.gift && cardNum(c) === String(p.gift).padStart(2, '0')) : ALL_CARDS.filter(c => c.gift);
-    return list.concat(gifts);
+    return list;
   });
 }
+// Gift cards are not tied to a pack: the first pack she opens ends with gift 1, the second with gift 2, and
+// so on, whichever packs she picks. They're ordered by card number and always holo.
+const GIFTS = ALL_CARDS.filter(c => c.gift).sort((a, b) => cardNum(a) - cardNum(b)).map(c => ({ ...c, holo: true }));
 const DEALT = dealPacks();
 let CARDS = ALL_CARDS;
 const $ = s => document.querySelector(s);
@@ -740,7 +738,9 @@ function renderTear() {
 }
 
 function buildPackScreen(i) {
-  CARDS = DEALT[i]; currentPack = i;
+  // packs already opened = packs no longer in the carousel, so backing out or replaying keeps the same gift
+  const giftNo = CFG.friends ? CFG.packs.length - avail.length : -1;
+  CARDS = CFG.friends ? DEALT[i].concat(GIFTS[giftNo] ? [GIFTS[giftNo]] : []) : DEALT[i]; currentPack = i;
   const p = CFG.packs[i];
   openWrap.innerHTML = `
     <div class="pack-area" id="packArea">
@@ -1107,7 +1107,7 @@ let zoomEl = null;
 let collection = false;
 function showSummary(all = false) {
   state = 'summary'; collection = all;
-  const list = all ? DEALT.flat() : CARDS;
+  const list = all ? (CFG.friends ? DEALT.flat().concat(GIFTS) : DEALT.flat()) : CARDS;
   const g = $('#grid'); g.innerHTML = '';
   $('#sumtitle').textContent = all ? 'Your collection' : 'Your pack';
   $('#sumsub').textContent = all ? `Every pack opened · all ${list.length} cards · tap one to take a closer look`
@@ -1263,7 +1263,7 @@ async function startIntro() {
   $('#stClose').addEventListener('click', () => { history.replaceState(null, '', location.pathname + location.search); sync(); });
 })();
 // Read-only debug hook used for automated testing.
-window.__bird = { get state() { return state; }, get tear() { return tear; }, deal: () => DEALT.map(p => p.map(c => cardNum(c) + (c.holo ? '*' : ''))) };
+window.__bird = { get state() { return state; }, get tear() { return tear; }, deal: () => DEALT.map(p => p.map(c => cardNum(c) + (c.holo ? '*' : ''))), get pack() { return CARDS.map(c => cardNum(c) + (c.holo ? '*' : '') + (c.gift ? 'g' : '')); } };
 })();
 </script>
 </body>

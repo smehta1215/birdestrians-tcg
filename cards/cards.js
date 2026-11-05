@@ -59,5 +59,20 @@ window.BIRDESTRIANS_CARDS = [
     "file": "cards/12-balcony-botany.webp",
     "holo": false,
     "gift": false
+  },
+  {
+    "file": "cards/91-gift-nail-drill.webp",
+    "holo": false,
+    "gift": true
+  },
+  {
+    "file": "cards/92-gift-nail-dust-vacuum.webp",
+    "holo": false,
+    "gift": true
+  },
+  {
+    "file": "cards/93-gift-gold-and-silver.webp",
+    "holo": false,
+    "gift": true
   }
 ];
