@@ -191,6 +191,14 @@ img { -webkit-user-drag: none; }
   box-shadow: 0 0 28px #fff, inset 0 0 28px #ffffffaa; }
 .land-glow { position: absolute; left: -45%; right: -45%; top: -25%; bottom: -25%; pointer-events: none; opacity: 0;
   background: radial-gradient(closest-side, #ffffffee, #ffffff66 45%, transparent 75%); }
+/* ---------- hidden sound diagnostics (open the site with #sound-test) ---------- */
+#soundTest { position: fixed; left: 10px; top: 60px; z-index: 200; width: min(360px, calc(100vw - 20px)); background: #14102aee; color: #e9e5ff;
+  font: 12px/1.45 ui-monospace, Menlo, monospace; border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px #0006; display: none; user-select: text; -webkit-user-select: text; }
+#soundTest.on { display: block; }
+#soundTest b { color: #8ff5d8; font-weight: 600; }
+#soundTest pre { margin: 6px 0 8px; white-space: pre-wrap; word-break: break-word; font: inherit; }
+#soundTest button { font: 600 13px 'Fredoka', system-ui, sans-serif; border: 0; border-radius: 999px; padding: 7px 12px; margin: 2px 4px 2px 0; cursor: pointer; background: #8ff5d8; color: #0d5c4e; }
+#soundTest button.alt { background: #e9e5ff; color: #2a2540; }
 #fx { position: fixed; inset: 0; pointer-events: none; z-index: 80; }
 
 /* ---------- intro / title screen ---------- */
@@ -272,6 +280,11 @@ code { background: #f0eef7; padding: 2px 6px; border-radius: 6px; }
 </section>
 
 <div class="zoom" id="zoom"><div class="zc" id="zc"></div></div>
+<div id="soundTest" role="dialog" aria-label="Sound test">
+  <div><b>Sound test</b> (only shown with #sound-test)</div>
+  <pre id="stInfo"></pre>
+  <button id="stTone">Play test tone</button><button class="alt" id="stHtml">Play beep via &lt;audio&gt;</button><button class="alt" id="stClose">Close</button>
+</div>
 <canvas id="fx"></canvas>
 
 <!-- Load settings and the card list fresh every visit, so phones never use a stale cached copy
@@ -348,29 +361,51 @@ $('#ctitle').textContent = CFG.message || '';
 ALL_CARDS.forEach(c => { const i = new Image(); i.src = c.file; });
 
 // ======================================================================= sound
+// Build a short mono 16-bit WAV in memory: `freq` 0 gives silence.
+function wavURL(seconds, freq, vol = 0.3) {
+  const rate = 22050, n = Math.max(1, Math.round(rate * seconds)), buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+  const str = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  str(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); str(8, 'WAVE'); str(12, 'fmt '); v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true);
+  v.setUint16(32, 2, true); v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) { const env = Math.min(1, i / 200, (n - i) / 200);
+    v.setInt16(44 + i * 2, freq ? Math.sin(2 * Math.PI * freq * i / rate) * vol * env * 32767 : 0, true); }
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
 const Sound = {
-  ctx: null, muted: false, noise: null, tear: null,
+  ctx: null, muted: false, noise: null, tear: null, lastError: '', lastGesture: '', gestures: 0,
+  // iPhone / iPad (iPadOS reports itself as a Mac, but with a touch screen)
+  isIOS: /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1),
   init() {
+    if (this.ctx && this.ctx.state === 'closed') this.ctx = null; // re-create a context Safari has closed
     if (this.ctx) { if (this.ctx.state !== 'running') this.resumeCtx(); return; }
     try {
-      // Safari 16.4+: play like a media app, so sound works even with the iPhone's silent switch on
-      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+      // iOS only: play like a media app, so sound works with the silent switch on. On macOS there's no
+      // silent switch and the setting doesn't help, so leave Safari's default there.
+      try { if (this.isIOS && navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { this.lastError = 'audioSession: ' + e.message; }
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.ctx.onstatechange = () => { if (this.ctx && this.ctx.state !== 'running' && this.ctx.state !== 'closed') this.resumeCtx(); };
       const len = this.ctx.sampleRate * 2, buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = buf.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
       this.noise = buf;
       this.master = this.ctx.createGain(); this.master.gain.value = 0.9; this.master.connect(this.ctx.destination);
-    } catch (e) { this.ctx = null; }
+    } catch (e) { this.ctx = null; this.lastError = 'AudioContext: ' + e.message; }
   },
   ok() { return this.ctx && !this.muted; },
-  resumeCtx() { try { const r = this.ctx.resume(); if (r && r.catch) r.catch(() => {}); } catch (e) {} },
+  resumeCtx() {
+    try { const r = this.ctx.resume(); if (r && r.catch) r.catch(e => { this.lastError = 'resume: ' + e.message; }); }
+    catch (e) { this.lastError = 'resume: ' + e.message; }
+  },
   // Phones only allow audio to start inside a finished tap (touchend / pointerup / click), not on
   // touch-down, so we (re)unlock on those events and play a silent sample to wake the audio output.
-  unlock() {
+  unlock(ev) {
+    if (ev) { this.lastGesture = ev.type; this.gestures++; }
     this.init(); if (!this.ctx) return;
-    if (this.ctx.state !== 'running') this.resumeCtx();
+    if (this.ctx.state !== 'running') this.resumeCtx(); // keeps retrying on every gesture until it runs
     if (!this.unlocked) { try { const b = this.ctx.createBuffer(1, 1, 22050), s = this.ctx.createBufferSource();
-      s.buffer = b; s.connect(this.ctx.destination); s.start(0); this.unlocked = true; } catch (e) {} }
+      s.buffer = b; s.connect(this.ctx.destination); s.start(0); this.unlocked = true; } catch (e) { this.lastError = 'silent buffer: ' + e.message; } }
+    if (!this.htmlUnlocked) { this.htmlUnlocked = true;
+      try { const a = new Audio(wavURL(0.05, 0)); a.setAttribute('playsinline', ''); const r = a.play(); if (r && r.catch) r.catch(() => {}); } catch (e) {} }
   },
   // carousel: a card-flick "thwip" each time a pack passes the centre
   // carousel: a soft rounded "tok" (pure tones, no noise) each time a pack passes the centre, like a dial
@@ -421,7 +456,11 @@ const Sound = {
 $('#mute').addEventListener('click', () => {
   Sound.muted = !Sound.muted; $('#mute').textContent = Sound.muted ? '🔇' : '🔊'; if (Sound.muted) Sound.tearStop();
 });
-['touchend', 'pointerup', 'click', 'keydown'].forEach(ev => addEventListener(ev, () => Sound.unlock(), { passive: true, capture: true }));
+// Unlock audio on every kind of user gesture. Safari counts mousedown/click/keydown on a Mac and a finished
+// tap (touchend) on iOS; a drag that ends in touchend doesn't count, so later taps keep retrying.
+['pointerdown', 'mousedown', 'touchend', 'pointerup', 'click', 'keydown'].forEach(ev => addEventListener(ev, e => Sound.unlock(e), { passive: true, capture: true }));
+// Safari can suspend or "interrupt" audio when the tab is hidden; try again when it comes back.
+document.addEventListener('visibilitychange', () => { if (!document.hidden && Sound.ctx && Sound.ctx.state !== 'running') Sound.resumeCtx(); });
 
 // ---- Stop phones from zooming in (iOS Safari ignores user-scalable=no) ----
 // 1. A second tap within 350ms would trigger double-tap zoom: cancel the browser's default for it.
@@ -1206,6 +1245,36 @@ async function startIntro() {
   $('#intro').remove();
   state = 'carousel';
 }
+// ======================================================================= sound diagnostics (#sound-test)
+(function soundTest() {
+  const panel = $('#soundTest'), info = $('#stInfo');
+  let html = 'not tried';
+  const refresh = () => {
+    const c = Sound.ctx, as = navigator.audioSession;
+    info.textContent = [
+      `AudioContext: ${c ? c.state : 'not created yet (click or tap anything)'}`,
+      `sample rate: ${c ? c.sampleRate + ' Hz' : '-'}   time: ${c ? c.currentTime.toFixed(2) + 's' : '-'}`,
+      `audioSession: ${as ? 'yes, type = ' + as.type : 'not available'}   iOS: ${Sound.isIOS}`,
+      `muted in app: ${Sound.muted}   gestures seen: ${Sound.gestures} (last: ${Sound.lastGesture || '-'})`,
+      `<audio> beep: ${html}`,
+      `last error: ${Sound.lastError || 'none'}`,
+      `browser: ${navigator.userAgent}`,
+    ].join('\n');
+  };
+  const sync = () => { panel.classList.toggle('on', location.hash === '#sound-test'); refresh(); };
+  addEventListener('hashchange', sync); sync();
+  setInterval(() => { if (panel.classList.contains('on')) refresh(); }, 500);
+  // keep taps on the panel from starting the intro or the carousel
+  ['pointerdown', 'pointerup', 'click'].forEach(ev => panel.addEventListener(ev, e => e.stopPropagation()));
+  $('#stTone').addEventListener('click', () => { Sound.unlock(); Sound.chimeSoft(); setTimeout(refresh, 300); });
+  $('#stHtml').addEventListener('click', () => {
+    try { const a = new Audio(wavURL(0.4, 660)); const r = a.play(); html = 'playing…';
+      if (r && r.then) r.then(() => { html = 'played OK (did you hear it?)'; refresh(); }, e => { html = 'blocked: ' + e.name + ' ' + e.message; refresh(); }); }
+    catch (e) { html = 'error: ' + e.message; }
+    refresh();
+  });
+  $('#stClose').addEventListener('click', () => { history.replaceState(null, '', location.pathname + location.search); sync(); });
+})();
 // Read-only debug hook used for automated testing.
 window.__bird = { get state() { return state; }, get tear() { return tear; }, deal: () => DEALT.map(p => p.map(c => cardNum(c) + (c.holo ? '*' : ''))) };
 })();
